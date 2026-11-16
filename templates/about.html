@@ -1,0 +1,66 @@
+{% extends "base.html" %}{% block t %}About · How it works{% endblock %}{% block c %}
+<div class="wrap">
+<div class="page-head reveal visible">
+  <h1>About NativeGo</h1>
+  <p>Kenya's marketplace for authentic local experiences — built so travellers meet the real Kenya, and local experts earn directly from their craft.</p>
+</div>
+</div>
+
+<section class="section tinted">
+  <div class="wrap">
+    <h2 class="section-title reveal">Our mission</h2>
+    <p class="section-sub reveal">Too much of tourism's money leaks to middlemen. NativeGo connects you straight to the guide, the captain, the instructor — the person who actually knows the place. They set their price, they keep their earnings, and you get the insider experience.</p>
+    <div class="stats-strip reveal" style="margin-top:34px">
+      <div class="stat-cell"><div class="stat-num">{{ prov_n }}</div><div class="stat-lbl">Verified providers</div></div>
+      <div class="stat-cell"><div class="stat-num">{{ book_n }}</div><div class="stat-lbl">Bookings made</div></div>
+      <div class="stat-cell"><div class="stat-num">{{ cats|length }}</div><div class="stat-lbl">Categories</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="how">
+  <div class="wrap">
+    <h2 class="section-title reveal">How it works</h2>
+    <p class="section-sub reveal">Two sides, one simple flow.</p>
+    <div class="cols">
+      <div class="card-pad reveal">
+        <h3>🧳 For travellers</h3>
+        <ol>
+          <li><b>Discover</b> — search by destination, category or keyword. Every provider is verified before listing.</li>
+          <li><b>Book</b> — send a request with your date and group size. The provider confirms, usually within a day.</li>
+          <li><b>Experience</b> — meet your expert, enjoy Kenya like a local, then leave a review to help the next traveller.</li>
+        </ol>
+      </div>
+      <div class="card-pad reveal d1">
+        <h3>🧭 For providers</h3>
+        <ol>
+          <li><b>Sign up free</b> — create an account and describe your services, location and daily rate.</li>
+          <li><b>Get verified</b> — our team reviews every application. Verified listings go live for travellers to book.</li>
+          <li><b>Earn directly</b> — accept requests from your dashboard, deliver great experiences, build your rating.</li>
+        </ol>
+        <p><a class="btn" href="{{ url_for('signup') }}">Join as a provider</a></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section tinted">
+  <div class="wrap">
+    <h2 class="section-title reveal">Trust & verification</h2>
+    <p class="section-sub reveal">Your safety matters more than our growth.</p>
+    <div class="steps">
+      <div class="step reveal"><span class="emoji">🪪</span><h3>Identity checks</h3><p>Providers submit verifiable identity and contact details before their listing can go live.</p></div>
+      <div class="step reveal d1"><span class="emoji">⭐</span><h3>Real reviews</h3><p>Ratings come only from travellers with completed bookings — no fake five-stars.</p></div>
+      <div class="step reveal d2"><span class="emoji">🛡️</span><h3>Human moderation</h3><p>Our admin team reviews listings, bookings and reported content every day.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap center">
+    <h2 class="section-title reveal">Questions?</h2>
+    <p class="section-sub reveal">We'd love to hear from you.</p>
+    <a class="btn big reveal" href="mailto:hello@nativego.co.ke">hello@nativego.co.ke</a>
+  </div>
+</section>
+{% endblock %}

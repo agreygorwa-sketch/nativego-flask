@@ -1,0 +1,25 @@
+{% extends "admin_base.html" %}{% set active='providers' %}{% block t %}Providers{% endblock %}{% block c %}
+<h2>Providers</h2>
+<div class="table-wrap"><table>
+<tr><th>Business</th><th>Category</th><th>Location</th><th>Price/day</th><th>★</th><th>Bookings</th><th>Status</th><th>Actions</th></tr>
+{% for p in providers %}
+<tr>
+  <td><b>{{ p.business_name }}</b></td><td>{{ p.category }}</td><td class="muted">{{ p.location }}</td>
+  <td>KES {{ "{:,}".format(p.price_per_day) }}</td>
+  <td>{% if p.avg_r %}{{ "%.1f"|format(p.avg_r) }}{% else %}—{% endif %}</td>
+  <td>{{ p.n_b }}</td>
+  <td>{% if p.verified %}<span class="badge">✓ verified</span>{% else %}<span class="pill pending">pending</span>{% endif %}</td>
+  <td><div class="inline">
+    <form method="post" action="{{ url_for('admin_provider_toggle', pid=p.id) }}">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <button class="btn sm ghost" type="submit">{{ 'Unverify' if p.verified else 'Verify' }}</button>
+    </form>
+    <form method="post" action="{{ url_for('admin_provider_delete', pid=p.id) }}" onsubmit="return confirm('Delete {{ p.business_name }} and ALL its bookings/reviews?')">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <button class="btn sm danger" type="submit">Delete</button>
+    </form>
+  </div></td>
+</tr>
+{% endfor %}
+</table></div>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "admin_base.html" %}{% set active='messages' %}{% block t %}Messages{% endblock %}{% block c %}
+<h2>Contact messages <span class="count">{{ msgs|selectattr('read', 'equalto', 0)|list|length }} unread</span></h2>
+{% if msgs %}
+<div class="table-wrap"><table>
+  <tr><th></th><th>From</th><th>Subject</th><th>Message</th><th>Received</th><th></th></tr>
+  {% for m in msgs %}
+  <tr class="{% if not m.read %}unread-row{% endif %}">
+    <td>{% if not m.read %}<span class="pill pending">new</span>{% endif %}</td>
+    <td><b>{{ m.name }}</b><br><span class="muted">{{ m.email }}</span></td>
+    <td><span class="cat">{{ m.subject }}</span></td>
+    <td style="max-width:320px">{{ m.message }}</td>
+    <td class="muted">{{ m.created_at }}</td>
+    <td>
+      <div class="inline">
+        <form method="post" action="{{ url_for('admin_message_toggle', mid=m.id) }}" class="inline-form">
+          <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+          <button class="btn sm ghost" type="submit">{% if m.read %}Mark unread{% else %}Mark read{% endif %}</button>
+        </form>
+        <form method="post" action="{{ url_for('admin_message_delete', mid=m.id) }}" class="inline-form" onsubmit="return confirm('Delete this message?')">
+          <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+          <button class="btn sm danger" type="submit">Delete</button>
+        </form>
+      </div>
+    </td>
+  </tr>
+  {% endfor %}
+</table></div>
+{% else %}
+<p class="muted">No messages yet. When visitors use the contact form, they'll land here.</p>
+{% endif %}
+{% endblock %}

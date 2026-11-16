@@ -1,0 +1,18 @@
+{% extends "base.html" %}{% block t %}Edit profile{% endblock %}{% block c %}
+<div class="wrap">
+<div class="narrow wide">
+<h2>Edit business profile</h2>
+<form method="post" action="{{ url_for('provider_edit') }}" class="form">
+  <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+  <label>Business name<input name="business_name" required maxlength="120" value="{{ prov.business_name }}"></label>
+  <label>Category<select name="category">{% for c in cats %}<option {% if c == prov.category %}selected{% endif %}>{{ c }}</option>{% endfor %}</select></label>
+  <label>Location<input name="location" required maxlength="80" value="{{ prov.location }}"></label>
+  <label>Price per day (KES)<input name="price_per_day" type="number" min="1" required value="{{ prov.price_per_day }}"></label>
+  <label>Phone<input name="phone" required maxlength="30" value="{{ prov.phone }}"></label>
+  <label>Description<textarea name="description" rows="5" maxlength="1000" required>{{ prov.description }}</textarea></label>
+  <button class="btn" type="submit">Save changes</button>
+  <a class="btn ghost" href="{{ url_for('provider_dashboard') }}">Cancel</a>
+</form>
+</div>
+</div>
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends "admin_base.html" %}{% set active='overview' %}{% block t %}Overview{% endblock %}{% block c %}
+<h2>Overview</h2>
+<div class="stats">
+  <div class="stat"><b>{{ stats.users }}</b><span>users</span></div>
+  <div class="stat"><b>{{ stats.providers }}</b><span>providers</span></div>
+  <div class="stat warn"><b>{{ stats.pending_verif }}</b><span>pending verifications</span></div>
+  <div class="stat"><b>{{ stats.bookings }}</b><span>bookings</span></div>
+  <div class="stat"><b>{{ stats.reviews }}</b><span>reviews</span></div>
+  <div class="stat warn"><b>{{ stats.open_reports }}</b><span>open reports</span></div>
+  <div class="stat gold"><b>KES {{ "{:,}".format(stats.revenue) }}</b><span>platform revenue (10%)</span></div>
+</div>
+<div class="cols">
+<div class="panel">
+  <h3>Bookings — last 6 months</h3>
+  <svg viewBox="0 0 360 190" class="chart" role="img" aria-label="Bookings per month">
+    {% for i in range(6) %}
+    {% set v = values[i] %}{% set h = (v / maxv * 120) if maxv else 0 %}
+    {% set x = 20 + i * 55 %}
+    <rect x="{{ x }}" y="{{ 150 - h }}" width="36" height="{{ h }}" rx="5" class="bar"/>
+    <text x="{{ x + 18 }}" y="{{ 145 - h }}" text-anchor="middle" class="bar-val">{{ v }}</text>
+    <text x="{{ x + 18 }}" y="168" text-anchor="middle" class="bar-lab">{{ labels[i] }}</text>
+    {% endfor %}
+    <line x1="10" y1="150" x2="350" y2="150" class="axis"/>
+  </svg>
+</div>
+<div class="panel">
+  <h3>Recent activity</h3>
+  {% for a in activity %}
+  <div class="activity"><span class="act-tag">{{ a.action.replace('_',' ') }}</span>
+    <b>{{ a.actor }}</b> <span class="muted">{{ a.detail }}</span>
+    <span class="muted right">{{ a.created_at }}</span></div>
+  {% else %}<p class="muted">No activity yet.</p>{% endfor %}
+  <p><a href="{{ url_for('admin_activity') }}">View full activity log →</a></p>
+</div>
+</div>
+{% endblock %}

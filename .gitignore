@@ -1,0 +1,7 @@
+# Local secrets and generated files — never commit these.
+secret.key
+nativego.db
+uploads/
+__pycache__/
+*.pyc
+.venv/

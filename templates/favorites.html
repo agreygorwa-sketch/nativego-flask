@@ -1,0 +1,24 @@
+{% extends "base.html" %}{% block t %}My favorites{% endblock %}{% block c %}
+<div class="wrap">
+<h2>♥ My favorites</h2>
+<div class="grid">
+{% for p in providers %}
+<div class="card">
+  <div class="card-top"><span class="badge">✓ Verified</span><span class="cat">{{ p.category }}</span></div>
+  <a class="card-link" href="{{ url_for('provider_detail', pid=p.id) }}"><h3>{{ p.business_name }}</h3></a>
+  <p class="loc">📍 {{ p.location }}</p>
+  {% if p.avg_r %}<p class="stars">★ {{ "%.1f"|format(p.avg_r) }}</p>{% endif %}
+  <div class="card-foot">
+    <p class="price">KES {{ "{:,}".format(p.price_per_day) }} <span>/ day</span></p>
+    <form method="post" action="{{ url_for('favorite', pid=p.id) }}">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <button class="heart on" title="Remove">♥</button>
+    </form>
+  </div>
+</div>
+{% else %}
+<p class="muted">Nothing saved yet. Tap ♥ on any provider to build your wishlist.</p>
+{% endfor %}
+</div>
+</div>
+{% endblock %}

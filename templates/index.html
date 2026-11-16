@@ -1,0 +1,116 @@
+{% extends "base.html" %}{% block t %}Explore Kenya with local experts{% endblock %}{% block c %}
+
+<!-- HERO -->
+<section class="hero-landing">
+  <div class="blob b1"></div><div class="blob b2"></div>
+  <div class="wrap">
+    <span class="hero-kicker">🇰🇪 Kenya's local tourism marketplace</span>
+    <h1>Explore Kenya with local experts</h1>
+    <p class="lede">Book verified safari guides, dhow captains, dive instructors and cultural hosts — directly, with no middlemen and no inflated prices.</p>
+    <form class="hero-search" method="get" action="{{ url_for('discover') }}">
+      <input name="q" placeholder="Try 'Mara', 'diving', 'Nairobi'…">
+      <select name="category"><option value="">All categories</option>
+        {% for c in cats %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
+      </select>
+      <button class="btn" type="submit">Search</button>
+    </form>
+    <div class="hero-ctas">
+      <a class="btn light big" href="{{ url_for('discover') }}">Browse providers</a>
+      <a class="btn ghost big" style="border-color:rgba(255,255,255,.5);color:#fff" href="{{ url_for('signup') }}">Become a provider</a>
+    </div>
+    <p class="hero-note">✓ Every provider is identity-verified by our team before going live</p>
+  </div>
+</section>
+
+<!-- STATS -->
+<div class="wrap">
+  <div class="stats-strip reveal">
+    <div class="stat-cell"><div class="stat-num">{{ prov_n }}</div><div class="stat-lbl">Verified providers</div></div>
+    <div class="stat-cell"><div class="stat-num">{{ book_n }}</div><div class="stat-lbl">Bookings made</div></div>
+    <div class="stat-cell"><div class="stat-num">{% if avg %}{{ "%.1f"|format(avg) }}<span class="gold"> ★</span>{% else %}—{% endif %}</div><div class="stat-lbl">Average rating</div></div>
+    <div class="stat-cell"><div class="stat-num">{{ cats|length }}</div><div class="stat-lbl">Experience categories</div></div>
+  </div>
+</div>
+
+<!-- HOW IT WORKS -->
+<section class="section" id="how">
+  <div class="wrap">
+    <h2 class="section-title reveal">How it works</h2>
+    <p class="section-sub reveal">From search to sunset in three simple steps.</p>
+    <div class="steps">
+      <div class="step reveal"><span class="emoji">🔍</span><div class="step-num">1</div><h3>Discover</h3><p>Search verified local providers by place, category or vibe. Read real reviews from fellow travellers.</p></div>
+      <div class="step reveal d1"><span class="emoji">📩</span><div class="step-num">2</div><h3>Book</h3><p>Send a booking request in seconds. Your provider confirms, and you sort the details directly.</p></div>
+      <div class="step reveal d2"><span class="emoji">🌅</span><div class="step-num">3</div><h3>Experience</h3><p>Meet your local expert and experience Kenya like an insider — then leave a review.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- CATEGORIES -->
+<section class="section tinted">
+  <div class="wrap">
+    <h2 class="section-title reveal">What are you into?</h2>
+    <p class="section-sub reveal">Pick a flavour of adventure.</p>
+    <div class="cat-grid">
+      {% for c in cats %}
+      <a class="cat-tile reveal" href="{{ url_for('discover', category=c) }}">
+        <span class="emoji">{{ cat_emoji.get(c, '🧭') }}</span><b>{{ c }}</b>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- FEATURED -->
+<section class="section">
+  <div class="wrap">
+    <h2 class="section-title reveal">Top-rated providers</h2>
+    <p class="section-sub reveal">Loved by travellers, verified by us.</p>
+    <div class="grid">
+      {% for p in featured %}
+      <div class="card reveal">
+        <div class="card-top"><span class="badge">✓ Verified</span><span class="cat">{{ p.category }}</span></div>
+        <a class="card-link" href="{{ url_for('provider_detail', pid=p.id) }}"><h3>{{ p.business_name }}</h3></a>
+        <p class="loc">📍 {{ p.location }}</p>
+        {% if p.avg_r %}<p class="stars">★ {{ "%.1f"|format(p.avg_r) }} <span class="muted">({{ p.n_r }} review{{ 's' if p.n_r != 1 }})</span></p>{% endif %}
+        <p class="desc">{{ p.description[:95] }}…</p>
+        <div class="card-foot">
+          <p class="price">KES {{ "{:,}".format(p.price_per_day) }} <span>/ day</span></p>
+          <a class="btn sm" href="{{ url_for('provider_detail', pid=p.id) }}">View</a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <p class="center"><a class="btn ghost" href="{{ url_for('discover') }}">See all providers →</a></p>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="section tinted">
+  <div class="wrap">
+    <h2 class="section-title reveal">Travellers love NativeGo</h2>
+    <p class="section-sub reveal">Real reviews from real trips.</p>
+    <div class="testis">
+      {% for t in testimonials %}
+      <div class="testi reveal">
+        <div class="tour">“</div>
+        <p>{{ t.comment }}</p>
+        <div class="stars">{% for i in range(t.rating) %}★{% endfor %}{% for i in range(5 - t.rating) %}<span class="muted">★</span>{% endfor %}</div>
+        <div class="who"><b>{{ t.tourist }}</b><br><span class="muted">booked {{ t.business_name }}</span></div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- PROVIDER CTA -->
+<section class="section">
+  <div class="wrap">
+    <div class="cta-banner reveal">
+      <div class="blob b3"></div>
+      <h2>Earn with your expertise</h2>
+      <p>Are you a guide, captain, instructor or host? List your services on NativeGo and reach travellers looking for exactly what you offer. Free to join — you keep what you earn.</p>
+      <a class="btn light big" href="{{ url_for('signup') }}">Become a provider</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

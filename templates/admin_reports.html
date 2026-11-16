@@ -1,0 +1,43 @@
+{% extends "admin_base.html" %}{% set active='reports' %}{% block t %}Reports{% endblock %}{% block c %}
+<h2>Reported cases <span class="count">{{ open_n }} open</span></h2>
+<p class="muted">
+  <a href="{{ url_for('admin_reports', status='open') }}">Open</a> ·
+  <a href="{{ url_for('admin_reports', status='closed') }}">Closed</a> ·
+  <a href="{{ url_for('admin_reports', status='all') }}">All</a>
+</p>
+{% if rows %}
+<div class="table-wrap"><table>
+  <tr><th>Reported</th><th>Reason</th><th>Details</th><th>By</th><th>Received</th><th>Status</th><th></th></tr>
+  {% for r in rows %}
+  <tr>
+    <td><b>{{ r.business_name }}</b><br><span class="muted">provider #{{ r.provider_id }}</span></td>
+    <td><span class="cat">{{ r.reason }}</span></td>
+    <td style="max-width:300px">{{ r.details }}</td>
+    <td>{{ r.reporter }}</td>
+    <td class="muted">{{ r.created_at }}</td>
+    <td>{% if r.status == 'open' %}<span class="pill pending">open</span>{% else %}<span class="pill">{{ r.action }}</span>{% endif %}</td>
+    <td>
+      {% if r.status == 'open' %}
+      <div class="inline">
+        <form method="post" action="{{ url_for('admin_report_action', rep_id=r.id, action='dismiss') }}" class="inline-form">
+          <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+          <button class="btn sm ghost" type="submit">Dismiss</button>
+        </form>
+        <form method="post" action="{{ url_for('admin_report_action', rep_id=r.id, action='warn') }}" class="inline-form">
+          <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+          <button class="btn sm ghost" type="submit">Warn</button>
+        </form>
+        <form method="post" action="{{ url_for('admin_report_action', rep_id=r.id, action='suspend') }}" class="inline-form" onsubmit="return confirm('Suspend this provider account? Their listing will be hidden and they will not be able to log in.')">
+          <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+          <button class="btn sm danger" type="submit">Suspend</button>
+        </form>
+      </div>
+      {% else %}<span class="muted">{{ r.action }}{% if r.resolved_at %} · {{ r.resolved_at }}{% endif %}</span>{% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+</table></div>
+{% else %}
+<p class="muted">No {{ status }} reports. When tourists report a provider, the case lands here.</p>
+{% endif %}
+{% endblock %}

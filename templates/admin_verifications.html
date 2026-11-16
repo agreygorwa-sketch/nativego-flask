@@ -1,0 +1,37 @@
+{% extends "admin_base.html" %}{% set active='verifications' %}{% block t %}Verifications{% endblock %}{% block c %}
+<h2>Verification queue <span class="count">{{ pending|length }}</span></h2>
+{% for p in pending %}
+<div class="panel verif">
+  <div class="card-top"><span class="cat">{{ p.category }}</span><span class="pill pending">pending</span></div>
+  <h3>{{ p.business_name }}</h3>
+  <p class="muted">📍 {{ p.location }} · 📞 {{ p.phone }}{% if p.owner %} · owner: {{ p.owner }} ({{ p.email }}){% endif %}</p>
+  <p><b>KES {{ "{:,}".format(p.price_per_day) }}</b> / day</p>
+  <p>{{ p.description }}</p>
+  {% set pdocs = docs|selectattr('provider_id', 'equalto', p.id)|list %}
+  {% if pdocs %}
+  <p><b>Uploaded documents:</b></p>
+  {% for d in pdocs %}
+  <p>📄 {{ d.doc_type }} — <a href="{{ url_for('admin_verification_doc', doc_id=d.id) }}">{{ d.original_name }}</a> <span class="muted">({{ d.uploaded_at }})</span></p>
+  {% endfor %}
+  {% else %}<p class="muted">No documents uploaded.</p>{% endif %}
+  <div class="inline">
+    <form method="post" action="{{ url_for('admin_verify', pid=p.id, decision='approve') }}">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <button class="btn" type="submit">✓ Approve & go live</button>
+    </form>
+    <form method="post" action="{{ url_for('admin_verify', pid=p.id, decision='reject') }}" onsubmit="return confirm('Reject and delete this application?')">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <button class="btn ghost" type="submit">Reject</button>
+    </form>
+  </div>
+</div>
+{% else %}<p class="muted">Queue is clear. 🎉</p>{% endfor %}
+{% set pending_ids = pending|map(attribute='id')|list %}
+{% set extra = docs|rejectattr('provider_id', 'in', pending_ids)|list %}
+{% if extra %}
+<h3 style="margin-top:26px">Documents from verified providers</h3>
+{% for d in extra %}
+<p>📄 {{ d.doc_type }} — <a href="{{ url_for('admin_verification_doc', doc_id=d.id) }}">{{ d.original_name }}</a> <span class="muted">· provider #{{ d.provider_id }} · {{ d.uploaded_at }}</span></p>
+{% endfor %}
+{% endif %}
+{% endblock %}

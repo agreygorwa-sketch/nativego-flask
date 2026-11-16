@@ -1,0 +1,86 @@
+{% extends "base.html" %}{% block t %}FAQ{% endblock %}{% block c %}
+<div class="wrap">
+  <div class="page-head">
+    <h1>Frequently asked questions</h1>
+    <p>Everything you need to know about booking — and earning — with NativeGo.</p>
+  </div>
+
+  <section class="section" style="padding-top:12px">
+    <h2 class="section-title reveal">🧳 For tourists</h2>
+    <div class="faq reveal">
+      <details open>
+        <summary>How does booking work?</summary>
+        <p>Browse <a href="{{ url_for('discover') }}">verified providers</a>, open a profile, pick your date and group size, and send a booking request. The provider confirms (usually within a day), and you sort the finer details directly with them. Your request starts as <i>pending</i> and moves to <i>accepted</i> once confirmed.</p>
+      </details>
+      <details>
+        <summary>Do I pay through NativeGo?</summary>
+        <p>Not yet — NativeGo is currently a demo, so <b>no real payments are processed on the platform</b>. You arrange payment directly with your provider (M-Pesa, cash or bank transfer, as you agree). When we launch in-app payments, we'll announce it here first.</p>
+      </details>
+      <details>
+        <summary>What is the cancellation policy?</summary>
+        <p>You can cancel any <b>pending</b> request yourself from <i>My bookings</i> at no cost. Once a provider has accepted, please contact them directly — we recommend giving at least 48 hours' notice so they can rebook the slot.</p>
+      </details>
+      <details>
+        <summary>Are providers really verified?</summary>
+        <p>Yes. Every provider goes through our verification: ID check, phone confirmation and a manual review by our admin team before their listing goes live. Look for the <span class="badge">✓ Verified</span> badge on every listing.</p>
+      </details>
+      <details>
+        <summary>What if my provider cancels?</summary>
+        <p>It happens rarely, but if it does, <a href="{{ url_for('contact') }}">contact us</a> and we'll help you find an alternative provider for your dates. Providers who cancel repeatedly lose their verified badge.</p>
+      </details>
+      <details>
+        <summary>Is it safe to meet a provider?</summary>
+        <p>We verify every provider, but stay street-smart: meet in a public place first, share your itinerary with someone you trust, and keep communication on the platform until you meet. Read our <a href="{{ url_for('safety') }}">Trust &amp; Safety</a> page for the full guide.</p>
+      </details>
+      <details>
+        <summary>Can I leave a review?</summary>
+        <p>Absolutely — reviews are the heart of NativeGo. After your experience, open the provider's profile and leave a 1–5 star rating with a comment. Honest reviews help other travellers and reward great providers.</p>
+      </details>
+      <details>
+        <summary>Can I book for a group?</summary>
+        <p>Yes. Enter your group size (up to 50) when sending a request, and mention any special needs in the notes — providers regularly handle school groups, corporate teams and wedding parties.</p>
+      </details>
+    </div>
+  </section>
+
+  <section class="section tinted">
+    <div class="wrap">
+      <h2 class="section-title reveal">🧭 For providers</h2>
+      <div class="faq reveal">
+        <details open>
+          <summary>How do I join NativeGo?</summary>
+          <p><a href="{{ url_for('signup') }}">Sign up as a provider</a> and tell us about your business — what you offer, where, and your daily rate. Your application goes into our verification queue.</p>
+        </details>
+        <details>
+          <summary>What does verification involve, and how long does it take?</summary>
+          <p>We check your ID, confirm your phone number and manually review your listing for quality. Most applications are reviewed within <b>2–3 business days</b>. You'll be notified as soon as you're approved and live.</p>
+        </details>
+        <details>
+          <summary>What are the fees?</summary>
+          <p>Listing is free — no upfront costs, no subscriptions. NativeGo takes a <b>10% commission only on completed bookings</b>. If you don't earn, we don't earn.</p>
+        </details>
+        <details>
+          <summary>How do payouts work?</summary>
+          <p>NativeGo is currently a demo with <b>no in-app payments</b>, so you collect payment directly from your clients for now (M-Pesa works great). When platform payments launch, payouts will go straight to your M-Pesa or bank account.</p>
+        </details>
+        <details>
+          <summary>Can I edit my listing?</summary>
+          <p>Anytime. From your <i>Dashboard</i> you can update your description, price, phone number and location. Changes go live immediately.</p>
+        </details>
+        <details>
+          <summary>What if I need to cancel a booking?</summary>
+          <p>Life happens — decline or message the tourist as early as possible from your dashboard. Repeated last-minute cancellations can cost you your verified badge, so keep your calendar honest.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap center">
+      <h2 class="section-title reveal">Still stuck?</h2>
+      <p class="section-sub reveal">We reply within 24 hours.</p>
+      <a class="btn big reveal" href="{{ url_for('contact') }}">Contact us</a>
+    </div>
+  </section>
+</div>
+{% endblock %}

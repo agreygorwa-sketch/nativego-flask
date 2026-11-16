@@ -1,0 +1,51 @@
+{% extends "base.html" %}{% block t %}Discover providers{% endblock %}{% block c %}
+<div class="wrap">
+<div class="page-head reveal visible">
+  <h1>Discover providers</h1>
+  <p>Every listing below is from a verified local expert.</p>
+</div>
+<section class="hero reveal visible">
+  <form class="search" method="get" action="{{ url_for('discover') }}">
+    <input name="q" placeholder="Try 'Mara', 'diving', 'Nairobi'…" value="{{ q }}">
+    <select name="category"><option value="">All categories</option>
+      {% for c in cats %}<option value="{{ c }}" {% if c == cat %}selected{% endif %}>{{ c }}</option>{% endfor %}
+    </select>
+    <select name="location"><option value="">All locations</option>
+      {% for l in locs %}<option value="{{ l }}" {% if l == loc %}selected{% endif %}>{{ l }}</option>{% endfor %}
+    </select>
+    <select name="sort">
+      <option value="rating" {% if sort=='rating' %}selected{% endif %}>Top rated</option>
+      <option value="price_asc" {% if sort=='price_asc' %}selected{% endif %}>Price: low → high</option>
+      <option value="price_desc" {% if sort=='price_desc' %}selected{% endif %}>Price: high → low</option>
+      <option value="name" {% if sort=='name' %}selected{% endif %}>Name A–Z</option>
+    </select>
+    <label class="inline"><input type="checkbox" name="available" value="1" {% if avail_only %}checked{% endif %}> Available now only</label>
+    <button class="btn" type="submit">Search</button>
+  </form>
+</section>
+<div class="grid">
+{% for p in providers %}
+<div class="card">
+  <div class="card-top"><span class="badge">✓ Verified</span><span class="cat">{{ p.category }}</span></div>
+  <a class="card-link" href="{{ url_for('provider_detail', pid=p.id) }}"><h3>{{ p.business_name }}</h3></a>
+  <p class="loc">📍 {{ p.location }}</p>
+  {% if p.available %}<p class="muted">✓ Available</p>{% else %}<p class="muted">Currently unavailable</p>{% endif %}
+  {% if p.avg_r %}<p class="stars">★ {{ "%.1f"|format(p.avg_r) }} <span class="muted">({{ p.n_r }})</span></p>
+  {% else %}<p class="muted">No reviews yet</p>{% endif %}
+  <p class="desc">{{ p.description[:90] }}…</p>
+  <div class="card-foot">
+    <p class="price">KES {{ "{:,}".format(p.price_per_day) }} <span>/ day</span></p>
+    {% if me and me.role == 'tourist' %}
+    <form method="post" action="{{ url_for('favorite', pid=p.id) }}">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <button class="heart {% if p.id in favs %}on{% endif %}" title="Save to favorites">♥</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% else %}
+<p>No providers match. Try a different search.</p>
+{% endfor %}
+</div>
+</div>
+{% endblock %}

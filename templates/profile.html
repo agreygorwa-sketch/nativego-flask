@@ -1,0 +1,23 @@
+{% extends "base.html" %}{% block t %}My profile{% endblock %}{% block c %}
+<div class="wrap">
+<h2>My profile</h2>
+<div class="detail">
+  <p><b>{{ me.name }}</b></p>
+  <p class="muted">{{ me.email }} · {{ me.role|capitalize }} · member since {{ me.created_at }}</p>
+  {% if me.role == 'tourist' %}
+  <p>♥ {{ fav_n }} favorite{{ 's' if fav_n != 1 }} · 🧳 {{ bookings|length }} bookings</p>
+  {% endif %}
+  {% if extra %}
+  <hr>
+  <p><b>Business:</b> {{ extra.business_name }} {% if extra.verified %}<span class="badge">✓ Verified</span>{% else %}<span class="pill pending">pending verification</span>{% endif %}</p>
+  <p class="muted">{{ extra.category }} · {{ extra.location }} · KES {{ "{:,}".format(extra.price_per_day) }}/day</p>
+  {% endif %}
+</div>
+{% if bookings %}
+<h3>Recent bookings</h3>
+{% for r in bookings %}
+<div class="row"><div><b>{{ r.business_name }}</b> <span class="muted">· {{ r.date }}</span></div><span class="pill {{ r.status }}">{{ r.status }}</span></div>
+{% endfor %}
+{% endif %}
+</div>
+{% endblock %}

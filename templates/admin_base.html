@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block t %}Admin{% endblock %} · NativeGo Admin</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head><body class="admin-body">
+<aside class="sidebar">
+  <a class="logo" href="{{ url_for('index') }}">🌍 NativeGo</a>
+  <p class="side-label">ADMIN</p>
+  <nav class="side-nav">
+    <a href="{{ url_for('admin_overview') }}" class="{% if active=='overview' %}on{% endif %}">📊 Overview</a>
+    <a href="{{ url_for('admin_users') }}" class="{% if active=='users' %}on{% endif %}">👥 Users</a>
+    <a href="{{ url_for('admin_verifications') }}" class="{% if active=='verifications' %}on{% endif %}">✅ Verifications</a>
+    <a href="{{ url_for('admin_reports') }}" class="{% if active=='reports' %}on{% endif %}">🚩 Reports{% if open_reports %} <span class="count">{{ open_reports }}</span>{% endif %}</a>
+    <a href="{{ url_for('admin_providers') }}" class="{% if active=='providers' %}on{% endif %}">🧭 Providers</a>
+    <a href="{{ url_for('admin_bookings') }}" class="{% if active=='bookings' %}on{% endif %}">🧳 Bookings</a>
+    <a href="{{ url_for('admin_reviews') }}" class="{% if active=='reviews' %}on{% endif %}">⭐ Reviews</a>
+    <a href="{{ url_for('admin_messages') }}" class="{% if active=='messages' %}on{% endif %}">✉️ Messages{% if unread_msgs %} <span class="count">{{ unread_msgs }}</span>{% endif %}</a>
+    <a href="{{ url_for('admin_activity') }}" class="{% if active=='activity' %}on{% endif %}">📋 Activity log</a>
+  </nav>
+  <div class="side-foot">
+    <a href="{{ url_for('index') }}">← View site</a>
+    <a href="{{ url_for('logout') }}">Log out</a>
+  </div>
+</aside>
+<main class="admin-main">
+{% with msgs = get_flashed_messages(with_categories=true) %}{% for c, m in msgs %}
+<div class="flash {{ c }}">{{ m }}</div>{% endfor %}{% endwith %}
+{% block c %}{% endblock %}
+</main>
+</body></html>

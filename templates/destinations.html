@@ -1,0 +1,33 @@
+{% extends "base.html" %}{% block t %}Destinations{% endblock %}{% block c %}
+<div class="wrap">
+  <div class="page-head">
+    <h1>Destinations across Kenya</h1>
+    <p>From savannah to sea — pick a place, find a verified local who knows it best.</p>
+  </div>
+</div>
+<section class="section" style="padding-top:8px">
+  <div class="wrap">
+    <div class="grid">
+      {% for c in cards %}
+      <div class="card reveal">
+        <div class="dest-emoji">{{ c.emoji }}</div>
+        <h3>{{ c.name }}</h3>
+        <p class="desc">{{ c.blurb }}</p>
+        <div class="card-foot">
+          <span class="muted">{{ c.n }} provider{{ '' if c.n == 1 else 's' }}</span>
+          <a class="btn sm" href="{{ url_for('discover', q=c.q) }}">Explore providers</a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+<section class="section tinted">
+  <div class="wrap center">
+    <h2 class="section-title reveal">Don't see your destination?</h2>
+    <p class="section-sub reveal">New providers join every week — or tell us where you're headed.</p>
+    <a class="btn reveal" href="{{ url_for('discover') }}">Browse all providers</a>
+    <a class="btn ghost reveal" href="{{ url_for('contact') }}">Suggest a destination</a>
+  </div>
+</section>
+{% endblock %}

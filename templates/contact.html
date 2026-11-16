@@ -1,0 +1,44 @@
+{% extends "base.html" %}{% block t %}Contact us{% endblock %}{% block c %}
+<div class="wrap">
+  <div class="page-head">
+    <h1>Contact us</h1>
+    <p>Questions, feedback or a safety concern — we reply within 24 hours.</p>
+  </div>
+  <div class="cols" style="margin-bottom:60px">
+    <div class="card-pad reveal">
+      <h3 style="margin-top:0">Send a message</h3>
+      <form method="post" class="form">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <label>Your name<input name="name" required maxlength="80" value="{{ form.name or '' }}"></label>
+        <label>Email<input name="email" type="email" required maxlength="120" value="{{ form.email or '' }}"></label>
+        <label>Subject
+          <select name="subject">
+            {% for s in subjects %}
+            <option value="{{ s }}" {% if form.subject == s %}selected{% endif %}>{{ s }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>Message<textarea name="message" rows="6" required maxlength="2000" placeholder="How can we help?">{{ form.message or '' }}</textarea></label>
+        <button class="btn" type="submit">Send message</button>
+      </form>
+    </div>
+    <div>
+      <div class="card reveal" style="margin-bottom:16px">
+        <h3 style="margin-top:0">📧 Email</h3>
+        <p><a href="mailto:hello@nativego.co.ke">hello@nativego.co.ke</a></p>
+        <p class="muted">For bookings, partnerships and press.</p>
+      </div>
+      <div class="card reveal d1" style="margin-bottom:16px">
+        <h3 style="margin-top:0">📍 Where we are</h3>
+        <p>Nairobi, Kenya</p>
+        <p class="muted">Serving travellers across the country.</p>
+      </div>
+      <div class="card reveal d2">
+        <h3 style="margin-top:0">⏱️ Response time</h3>
+        <p>Within 24 hours on business days.</p>
+        <p class="muted">Safety concerns are prioritised — choose <i>Safety concern</i> as the subject.</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,67 @@
+{% extends "base.html" %}{% block t %}Trust & Safety{% endblock %}{% block c %}
+<div class="wrap">
+  <div class="page-head">
+    <h1>Trust &amp; Safety</h1>
+    <p>How we keep NativeGo safe for travellers and providers alike.</p>
+  </div>
+
+  <section class="section" style="padding-top:8px">
+    <h2 class="section-title reveal">How verification works</h2>
+    <p class="section-sub reveal">No one goes live without passing all three checks.</p>
+    <div class="steps">
+      <div class="step reveal"><div class="step-num">1</div><h3>ID check</h3><p>Every provider submits a valid national ID or passport, which our team reviews manually.</p></div>
+      <div class="step reveal d1"><div class="step-num">2</div><h3>Phone confirmation</h3><p>We confirm the provider's phone number so travellers can always reach a real person.</p></div>
+      <div class="step reveal d2"><div class="step-num">3</div><h3>Admin review</h3><p>Our team reviews the listing itself — services, pricing, photos — before awarding the <span class="badge">✓ Verified</span> badge.</p></div>
+    </div>
+  </section>
+
+  <section class="section tinted">
+    <div class="wrap">
+      <h2 class="section-title reveal">Safety tips for tourists</h2>
+      <div class="cols">
+        <div class="card-pad reveal">
+          <ul class="tips">
+            <li><b>Meet in public first.</b> Start at a hotel lobby, park gate or other public spot — not a private address.</li>
+            <li><b>Share your itinerary.</b> Tell a friend or your hotel where you're going, with whom, and when you expect to be back.</li>
+            <li><b>Check the badge.</b> Only book providers with the <span class="badge">✓ Verified</span> badge, and read their reviews first.</li>
+          </ul>
+        </div>
+        <div class="card-pad reveal d1">
+          <ul class="tips">
+            <li><b>Keep chat on NativeGo</b> until you've met in person — it keeps a record if anything goes wrong.</li>
+            <li><b>Trust your gut.</b> If something feels off, cancel and <a href="{{ url_for('contact') }}">tell us</a>. We'd rather rebook you than risk it.</li>
+            <li><b>Agree the price upfront.</b> Confirm the total cost and what's included before the experience starts.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <h2 class="section-title reveal">Provider code of conduct</h2>
+      <p class="section-sub reveal">Verified providers agree to:</p>
+      <div class="card-pad reveal" style="max-width:640px;margin:0 auto">
+        <ul class="tips">
+          <li>Honour confirmed bookings, or cancel with as much notice as possible.</li>
+          <li>Be honest about what's included — no surprise fees on the day.</li>
+          <li>Treat every traveller with respect, regardless of background.</li>
+          <li>Keep travellers' personal details private — never share them.</li>
+          <li>Put safety first: proper equipment, sensible routes, no unnecessary risks.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="cta-banner reveal">
+        <div class="blob b3"></div>
+        <h2>Something wrong?</h2>
+        <p>Report a safety concern and our team will prioritise it — we respond within 24 hours.</p>
+        <a class="btn light big" href="{{ url_for('contact') }}">Report a concern</a>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}

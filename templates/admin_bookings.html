@@ -1,0 +1,18 @@
+{% extends "admin_base.html" %}{% set active='bookings' %}{% block t %}Bookings{% endblock %}{% block c %}
+<h2>Bookings</h2>
+<div class="tabs">
+{% for s in ['all','pending','accepted','completed','declined','cancelled'] %}
+<a href="{{ url_for('admin_bookings', status=s) }}" class="{% if status==s %}on{% endif %}">{{ s }}</a>
+{% endfor %}
+</div>
+<div class="table-wrap"><table>
+<tr><th>ID</th><th>Tourist</th><th>Provider</th><th>Date</th><th>Guests</th><th>Value</th><th>Status</th><th>Requested</th></tr>
+{% for r in rows %}
+<tr><td>{{ r.id }}</td><td>{{ r.tourist }}</td><td>{{ r.business_name }}</td>
+<td>{{ r.date }}</td><td>{{ r.guests }}</td>
+<td>KES {{ "{:,}".format(r.price_per_day * r.guests) }}</td>
+<td><span class="pill {{ r.status }}">{{ r.status }}</span></td>
+<td class="muted">{{ r.created_at }}</td></tr>
+{% else %}<tr><td colspan="8" class="muted">No bookings with this status.</td></tr>{% endfor %}
+</table></div>
+{% endblock %}

@@ -1,0 +1,65 @@
+{% extends "base.html" %}{% block t %}For providers{% endblock %}{% block c %}
+<!-- HERO -->
+<section class="hero-landing">
+  <div class="blob b1"></div><div class="blob b2"></div>
+  <div class="wrap">
+    <span class="hero-kicker">🧭 For guides, captains, instructors &amp; hosts</span>
+    <h1>Turn your expertise into income</h1>
+    <p class="lede">Join {{ prov_n }} verified local providers earning directly from travellers — no middlemen, no upfront fees, your schedule your rules.</p>
+    <div class="hero-ctas">
+      <a class="btn light big" href="{{ url_for('signup') }}">Apply as a provider</a>
+      <a class="btn ghost big" style="border-color:rgba(255,255,255,.5);color:#fff" href="{{ url_for('discover') }}">See live listings</a>
+    </div>
+    <p class="hero-note">✓ Free to join &nbsp;·&nbsp; ✓ 10% commission only on completed bookings &nbsp;·&nbsp; ✓ No hidden fees</p>
+  </div>
+</section>
+
+<!-- BENEFITS -->
+<section class="section">
+  <div class="wrap">
+    <h2 class="section-title reveal">Why providers choose NativeGo</h2>
+    <div class="grid">
+      <div class="card reveal"><div class="dest-emoji">💰</div><h3>No upfront fees</h3><p class="desc">Listing is completely free. You only pay a 10% commission when a booking is completed — if you don't earn, we don't earn.</p></div>
+      <div class="card reveal d1"><div class="dest-emoji">🤝</div><h3>Direct bookings</h3><p class="desc">Tourists book you directly. No agency taking a cut, no waiting for referrals — your calendar, your clients, your rates.</p></div>
+      <div class="card reveal d2"><div class="dest-emoji">✓</div><h3>Verified badge trust</h3><p class="desc">Our verification badge tells travellers you're legit. Verified providers get more views, more bookings and better reviews.</p></div>
+      <div class="card reveal d3"><div class="dest-emoji">🗓️</div><h3>Flexible schedule</h3><p class="desc">Accept the requests that suit you, decline the rest. Update your availability and profile anytime from your dashboard.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- VERIFICATION STEPS -->
+<section class="section tinted">
+  <div class="wrap">
+    <h2 class="section-title reveal">How verification works</h2>
+    <p class="section-sub reveal">Three steps to your verified badge — usually done in 2–3 business days.</p>
+    <div class="steps">
+      <div class="step reveal"><div class="step-num">1</div><h3>Apply</h3><p>Sign up and describe your business, location and rates. Takes about five minutes.</p></div>
+      <div class="step reveal d1"><div class="step-num">2</div><h3>We verify</h3><p>Our team checks your ID, confirms your phone number and reviews your listing for quality.</p></div>
+      <div class="step reveal d2"><div class="step-num">3</div><h3>Go live</h3><p>Get your ✓ badge, appear in search, and start receiving booking requests from travellers.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="section">
+  <div class="wrap">
+    <h2 class="section-title reveal">Providers are earning already</h2>
+    <div class="testis">
+      <div class="testi reveal"><p>"I used to wait for tour companies to call me. Now bookings come straight to my phone — last month was my best ever."</p><b>— Kevin M., Safari Guide, Maasai Mara</b></div>
+      <div class="testi reveal d1"><p>"The verified badge changed everything. Tourists trust me before we even meet, and my calendar fills up weeks ahead."</p><b>— Fatma A., Dhow Captain, Lamu</b></div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="section">
+  <div class="wrap">
+    <div class="cta-banner reveal">
+      <div class="blob b3"></div>
+      <h2>Ready to get booked?</h2>
+      <p>Join Kenya's growing community of independent tourism professionals.</p>
+      <a class="btn light big" href="{{ url_for('signup') }}">Create your listing — it's free</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

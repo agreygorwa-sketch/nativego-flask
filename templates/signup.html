@@ -1,0 +1,41 @@
+{% extends "base.html" %}{% block t %}Sign up{% endblock %}{% block c %}
+<div class="wrap">
+<div class="narrow wide">
+<h2>Create your account</h2>
+<form method="post" action="{{ url_for('signup') }}" class="form" id="signup-form">
+  <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+  <label>Full name<input name="name" required maxlength="80" value="{{ form.get('name','') }}"></label>
+  <label>Email<input name="email" type="email" required maxlength="120" value="{{ form.get('email','') }}"></label>
+  <label>Password <span class="muted">(min 8 characters)</span><input name="password" type="password" required minlength="8" autocomplete="new-password"></label>
+  <label>I am a…
+    <select name="role" id="role-sel">
+      <option value="tourist" {% if form.get('role')=='tourist' %}selected{% endif %}>🧳 Tourist — discover & book experiences</option>
+      <option value="provider" {% if form.get('role')=='provider' %}selected{% endif %}>🧭 Local provider — offer your services</option>
+    </select>
+  </label>
+  <div id="provider-fields" style="display:none">
+    <hr>
+    <h3>Your business <span class="muted">(goes to admin verification)</span></h3>
+    <label>Business name<input name="business" maxlength="120" value="{{ form.get('business','') }}"></label>
+    <label>Category<select name="category">{% for c in cats %}<option {% if form.get('category')==c %}selected{% endif %}>{{ c }}</option>{% endfor %}</select></label>
+    <label>Location<input name="location" maxlength="80" placeholder="e.g. Watamu" value="{{ form.get('location','') }}"></label>
+    <label>Price per day (KES)<input name="price" type="number" min="1" value="{{ form.get('price','') }}"></label>
+    <label>Phone<input name="phone" maxlength="30" placeholder="+254 7…" value="{{ form.get('phone','') }}"></label>
+    <label>Description<textarea name="description" rows="4" maxlength="1000">{{ form.get('description','') }}</textarea></label>
+  </div>
+  <button class="btn" type="submit">Create account</button>
+</form>
+<p class="muted center">Already have one? <a href="{{ url_for('login') }}">Log in</a></p>
+<p class="fineprint">By continuing you agree to our <a href="{{ url_for('terms') }}">Terms of Service</a> and <a href="{{ url_for('privacy') }}">Privacy Policy</a>.</p>
+
+</div>
+<script>
+(function(){
+  var sel = document.getElementById('role-sel'),
+      pf = document.getElementById('provider-fields');
+  function tog(){ pf.style.display = sel.value === 'provider' ? 'block' : 'none'; }
+  sel.addEventListener('change', tog); tog();
+})();
+</script>
+</div>
+{% endblock %}

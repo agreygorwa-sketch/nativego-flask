@@ -1,0 +1,66 @@
+{% extends "base.html" %}{% block t %}{{ p.business_name }}{% endblock %}{% block c %}
+<div class="wrap">
+<div class="detail">
+  <div class="card-top"><span class="badge">✓ Verified provider</span><span class="cat">{{ p.category }}</span></div>
+  <h2>{{ p.business_name }}</h2>
+  <p class="loc">📍 {{ p.location }} · 📞 {{ p.phone }}</p>
+  <p class="price big">KES {{ "{:,}".format(p.price_per_day) }} <span>/ day</span></p>
+  <p>{{ p.description }}</p>
+  {% if avg %}<p class="stars big">★ {{ "%.1f"|format(avg) }} <span class="muted">({{ n }} review{{ 's' if n != 1 }})</span></p>
+  {% else %}<p class="muted">No reviews yet — be the first!</p>{% endif %}
+  {% if avail_text %}<p class="muted">🗓️ {{ avail_text }}</p>{% endif %}
+  {% if me and me.role == 'tourist' %}
+  <form method="post" action="{{ url_for('favorite', pid=p.id) }}" class="inline-form">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <button class="btn {% if not fav %}ghost{% endif %}" type="submit">{% if fav %}♥ Saved{% else %}♡ Save to favorites{% endif %}</button>
+  </form>
+  {% endif %}
+</div>
+<div class="cols">
+<div>
+  <h3>Book this provider</h3>
+  {% if me and me.role == 'tourist' %}
+  <form method="post" action="{{ url_for('make_request', pid=p.id) }}" class="form card-pad">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <label>Date<input type="date" name="date" min="{{ today }}" required></label>
+    <label>Guests<input type="number" name="guests" min="1" max="50" value="2" required></label>
+    <label>Notes<textarea name="notes" rows="3" maxlength="500" placeholder="Anything they should know?"></textarea></label>
+    <button class="btn" type="submit">Send booking request</button>
+  </form>
+  {% elif me %}
+  <p class="muted">Only tourist accounts can book. (You are logged in as {{ me.role }}.)</p>
+  {% else %}
+  <p><a class="btn" href="{{ url_for('login', next=request.path) }}">Log in to book</a></p>
+  {% endif %}
+</div>
+<div>
+  <h3>Reviews</h3>
+  {% for r in reviews %}
+  <div class="review"><b>{{ r.name }}</b> · <span class="stars">★{{ r.rating }}</span> <span class="muted">{{ r.created_at }}</span><p>{{ r.comment }}</p></div>
+  {% else %}<p class="muted">No reviews yet.</p>{% endfor %}
+  {% if me and me.role == 'tourist' %}
+  <h4>Leave a review</h4>
+  <form method="post" action="{{ url_for('add_review', pid=p.id) }}" class="form card-pad">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <label>Rating (1–5)<input type="number" name="rating" min="1" max="5" value="5" required></label>
+    <label>Comment<textarea name="comment" rows="2" maxlength="1000" required></textarea></label>
+    <button class="btn" type="submit">Post review</button>
+  </form>
+  <h4>Report this provider</h4>
+  <form method="post" action="{{ url_for('report_provider', pid=p.id) }}" class="form card-pad">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <label>Reason
+      <select name="reason" required>
+        <option value="">Choose a reason…</option>
+        {% for reason in report_reasons %}<option value="{{ reason }}">{{ reason }}</option>{% endfor %}
+      </select>
+    </label>
+    <label>What happened?<textarea name="details" rows="3" maxlength="1000" required placeholder="Describe what happened…"></textarea></label>
+    <button class="btn ghost" type="submit">Send report</button>
+  </form>
+  <p class="muted">Reports go to the NativeGo team for review.</p>
+  {% endif %}
+</div>
+</div>
+</div>
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends "admin_base.html" %}{% set active='users' %}{% block t %}Users{% endblock %}{% block c %}
+<h2>Users</h2>
+<form class="search slim" method="get" action="{{ url_for('admin_users') }}">
+  <input name="q" placeholder="Search name or email…" value="{{ q }}">
+  <button class="btn sm" type="submit">Search</button>
+</form>
+<div class="table-wrap"><table>
+<tr><th>ID</th><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Joined</th><th>Actions</th></tr>
+{% for u in users %}
+<tr class="{% if not u.active %}inactive{% endif %}">
+  <td>{{ u.id }}</td><td>{{ u.name }}</td><td class="muted">{{ u.email }}</td>
+  <td>
+    <form method="post" action="{{ url_for('admin_user_role', uid=u.id) }}" class="inline">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <select name="role" onchange="this.form.submit()">
+        {% for r in ['tourist','provider','admin'] %}
+        <option value="{{ r }}" {% if r == u.role %}selected{% endif %}>{{ r }}</option>
+        {% endfor %}
+      </select>
+    </form>
+  </td>
+  <td><span class="pill {{ 'accepted' if u.active else 'declined' }}">{{ 'active' if u.active else 'deactivated' }}</span></td>
+  <td class="muted">{{ u.created_at }}</td>
+  <td>
+    <form method="post" action="{{ url_for('admin_user_toggle', uid=u.id) }}" class="inline">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <button class="btn sm {% if u.active %}ghost{% endif %}" type="submit">{{ 'Deactivate' if u.active else 'Reactivate' }}</button>
+    </form>
+  </td>
+</tr>
+{% endfor %}
+</table></div>
+{% endblock %}

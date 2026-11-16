@@ -1,0 +1,14 @@
+{% extends "admin_base.html" %}{% set active='reviews' %}{% block t %}Reviews{% endblock %}{% block c %}
+<h2>Review moderation</h2>
+{% for r in reviews %}
+<div class="row"><div>
+  <b>{{ r.tourist }}</b> → <b>{{ r.business_name }}</b> · <span class="stars">★{{ r.rating }}</span>
+  <span class="muted">{{ r.created_at }}</span>
+  <p>“{{ r.comment }}”</p>
+</div>
+<form method="post" action="{{ url_for('admin_review_delete', rid=r.id) }}" onsubmit="return confirm('Delete this review?')">
+  <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+  <button class="btn sm danger" type="submit">Delete</button>
+</form></div>
+{% else %}<p class="muted">No reviews yet.</p>{% endfor %}
+{% endblock %}

@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="NativeGo — book verified local guides, captains and hosts across Kenya.">
+<title>{% block t %}NativeGo{% endblock %} · NativeGo</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head><body>
+<header class="topbar" id="topbar"><div class="wrap bar">
+  <a class="logo" href="{{ url_for('index') }}">🌍 NativeGo</a>
+  <label class="nav-burger" for="nav-toggle" aria-label="Menu">☰</label>
+  <input type="checkbox" class="nav-toggle" id="nav-toggle" hidden>
+  <nav class="nav-links">
+    <a class="nl" href="{{ url_for('discover') }}">Discover</a>
+    <a class="nl" href="{{ url_for('destinations') }}">Destinations</a>
+    <a class="nl" href="{{ url_for('about') }}">How it works</a>
+    <a class="nl" href="{{ url_for('for_providers') }}">For providers</a>
+    {% if me %}
+      {% if me.role == 'tourist' %}
+        <a class="nl" href="{{ url_for('favorites_page') }}">♥ Favorites</a>
+        <a class="nl" href="{{ url_for('my_requests') }}">My bookings</a>
+      {% elif me.role == 'provider' %}
+        <a class="nl" href="{{ url_for('provider_dashboard') }}">Dashboard</a>
+      {% elif me.role == 'admin' %}
+        <a class="nl" href="{{ url_for('admin_overview') }}">Admin</a>
+      {% endif %}
+      <a class="user-chip" href="{{ url_for('profile') }}"><span class="avatar">{{ me.name[0]|upper }}</span>{{ me.name.split(' ')[0] }}</a>
+      <a class="nl" href="{{ url_for('logout') }}">Log out</a>
+    {% else %}
+      <a class="btn ghost sm" href="{{ url_for('login') }}">Log in</a>
+      <a class="btn sm" href="{{ url_for('signup') }}">Sign up</a>
+    {% endif %}
+  </nav>
+</div></header>
+<main>
+{% with msgs = get_flashed_messages(with_categories=true) %}{% if msgs %}<div class="wrap">{% for c, m in msgs %}
+<div class="flash {{ c }}">{{ m }}</div>{% endfor %}</div>{% endif %}{% endwith %}
+{% block c %}{% endblock %}
+</main>
+<footer class="site-footer">
+  <div class="footer-grid">
+    <div class="footer-col footer-brand">
+      <a class="logo" href="{{ url_for('index') }}">🌍 NativeGo</a>
+      <p>Connecting tourists with verified local providers across Kenya — guides, captains, instructors and hosts, booked directly.</p>
+      <p>Made in Kenya 🇰🇪</p>
+    </div>
+    <div class="footer-col">
+      <h4>Explore</h4>
+      <a href="{{ url_for('discover') }}">Discover providers</a>
+      <a href="{{ url_for('destinations') }}">Destinations</a>
+      <a href="{{ url_for('faq') }}">FAQ</a>
+      <a href="{{ url_for('contact') }}">Contact</a>
+      <a href="{{ url_for('for_providers') }}">Become a provider</a>
+      {% if me and me.role == 'tourist' %}
+      <a href="{{ url_for('favorites_page') }}">My favorites</a>
+      <a href="{{ url_for('my_requests') }}">My bookings</a>
+      {% endif %}
+    </div>
+    <div class="footer-col">
+      <h4>Company</h4>
+      <a href="{{ url_for('about') }}">About us</a>
+      <a href="{{ url_for('about') }}#how">How it works</a>
+      <a href="{{ url_for('safety') }}">Trust &amp; Safety</a>
+      <a href="{{ url_for('contact') }}">Contact us</a>
+    </div>
+    <div class="footer-col">
+      <h4>Legal</h4>
+      <a href="{{ url_for('privacy') }}">Privacy Policy</a>
+      <a href="{{ url_for('terms') }}">Terms of Service</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>© 2026 NativeGo · All rights reserved</span>
+    <span><a href="{{ url_for('privacy') }}">Privacy</a><a href="{{ url_for('terms') }}">Terms</a></span>
+  </div>
+</footer>
+<script>
+(function(){
+  var bar = document.getElementById('topbar');
+  function onScroll(){ bar.classList.toggle('scrolled', window.scrollY > 12); }
+  window.addEventListener('scroll', onScroll, {passive:true}); onScroll();
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(!reduce && 'IntersectionObserver' in window){
+    var io = new IntersectionObserver(function(es){
+      es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('visible'); io.unobserve(e.target); } });
+    }, {threshold:.12});
+    document.querySelectorAll('.reveal').forEach(function(el){ io.observe(el); });
+  } else {
+    document.querySelectorAll('.reveal').forEach(function(el){ el.classList.add('visible'); });
+  }
+})();
+</script>
+</body></html>

@@ -1,0 +1,77 @@
+{% extends "base.html" %}{% block t %}Provider dashboard{% endblock %}{% block c %}
+<div class="wrap">
+<div class="dash-head">
+  <div><h2>{{ prov.business_name }}</h2>
+  <p class="muted">{{ prov.location }} · KES {{ "{:,}".format(prov.price_per_day) }}/day
+  {% if prov.verified %}<span class="badge">✓ Verified</span>{% else %}<span class="pill pending">pending verification</span>{% endif %}</p></div>
+  <a class="btn" href="{{ url_for('provider_edit') }}">Edit profile</a>
+</div>
+<div class="stats">
+  <div class="stat"><b>{{ pending }}</b><span>pending requests</span></div>
+  <div class="stat"><b>{{ accepted }}</b><span>accepted</span></div>
+  <div class="stat"><b>{{ completed }}</b><span>completed</span></div>
+  <div class="stat gold"><b>KES {{ "{:,}".format(earnings) }}</b><span>est. earnings</span></div>
+</div>
+<div class="cols">
+<div class="card-pad">
+  <h3>Availability</h3>
+  <form method="post" action="{{ url_for('provider_availability') }}" class="form">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <label class="inline"><input type="checkbox" name="available" value="1" {% if prov.available %}checked{% endif %}> Accepting new bookings</label>
+    <p class="muted">Days available:</p>
+    <p>{% for d in days %}<label class="inline"><input type="checkbox" name="days" value="{{ d }}" {% if d in days_set %}checked{% endif %}> {{ d }}</label>{% endfor %}</p>
+    <label>Times / notes<input type="text" name="note" maxlength="200" value="{{ prov.availability_note }}" placeholder="e.g. 8am–6pm EAT, closed on public holidays"></label>
+    <button class="btn sm" type="submit">Save availability</button>
+  </form>
+</div>
+<div class="card-pad">
+  <h3>Verification documents</h3>
+  <form method="post" action="{{ url_for('provider_upload_doc') }}" enctype="multipart/form-data" class="form">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <label>Document type
+      <select name="doc_type" required>
+        <option value="">Choose…</option>
+        {% for t in doc_types %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+      </select>
+    </label>
+    <label>File (PDF, JPG or PNG, max 5 MB)<input type="file" name="document" accept=".pdf,.jpg,.jpeg,.png" required></label>
+    <button class="btn sm" type="submit">Upload document</button>
+  </form>
+  {% for d in docs %}
+  <p>📄 {{ d.doc_type }} — {{ d.original_name }} <span class="muted">({{ d.uploaded_at }})</span></p>
+  {% else %}<p class="muted">No documents uploaded yet.</p>{% endfor %}
+</div>
+</div>
+<div class="cols">
+<div>
+  <h3>Incoming requests</h3>
+  {% for r in rows %}
+  <div class="row"><div>
+    <b>{{ r.tourist }}</b> — {{ r.date }} · {{ r.guests }} guest(s)<br>
+    <span class="muted">{% if r.notes %}“{{ r.notes }}” · {% endif %}sent {{ r.created_at }}</span>
+  </div>
+  <a class="btn sm ghost" href="{{ url_for('booking_detail', rid=r.id) }}">💬 Messages</a>
+  {% if r.status == 'pending' %}
+  <form method="post" class="inline">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <button formaction="{{ url_for('request_action', rid=r.id, action='accept') }}" class="btn sm">Accept</button>
+    <button formaction="{{ url_for('request_action', rid=r.id, action='decline') }}" class="btn sm ghost">Decline</button>
+  </form>
+  {% elif r.status == 'accepted' %}
+  <form method="post" action="{{ url_for('request_action', rid=r.id, action='complete') }}">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <button class="btn sm" type="submit">Mark complete</button>
+  </form>
+  {% else %}<span class="pill {{ r.status }}">{{ r.status }}</span>{% endif %}
+  </div>
+  {% else %}<p class="muted">No requests yet.</p>{% endfor %}
+</div>
+<div>
+  <h3>Reviews {% if avg %}<span class="stars">★ {{ "%.1f"|format(avg) }} ({{ n }})</span>{% endif %}</h3>
+  {% for r in reviews %}
+  <div class="review"><b>{{ r.name }}</b> · <span class="stars">★{{ r.rating }}</span> <span class="muted">{{ r.created_at }}</span><p>{{ r.comment }}</p></div>
+  {% else %}<p class="muted">No reviews yet.</p>{% endfor %}
+</div>
+</div>
+</div>
+{% endblock %}

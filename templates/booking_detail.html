@@ -1,0 +1,67 @@
+{% extends "base.html" %}{% block t %}Booking #{{ r.id }}{% endblock %}{% block c %}
+<div class="wrap">
+<div class="page-head">
+  <h1>Booking #{{ r.id }}</h1>
+  <p><span class="pill {{ r.status }}">{{ r.status }}</span></p>
+</div>
+
+<div class="cols">
+  <div>
+    <div class="detail" style="margin-top:0">
+      <h3>Trip details</h3>
+      <p><b>{{ r.business_name }}</b> <span class="muted">· {{ r.location }}</span></p>
+      <p>📅 <b>{{ r.date }}</b><br>
+         👥 {{ r.guests }} guest(s)<br>
+         💰 KES {{ "{:,}".format(r.price_per_day * r.guests) }} total <span class="muted">(KES {{ "{:,}".format(r.price_per_day) }}/day)</span></p>
+      {% if r.notes %}<p>📝 “{{ r.notes }}”</p>{% endif %}
+      <p class="muted">Requested {{ r.created_at }} by {{ r.tourist }}</p>
+      <p><a class="btn sm ghost" href="{{ url_for('provider_detail', pid=r.provider_id) }}">View provider profile →</a></p>
+      {% if me.role == 'tourist' and r.status == 'pending' and r.tourist_id == me.id %}
+      <form method="post" action="{{ url_for('booking_cancel', rid=r.id) }}" onsubmit="return confirm('Cancel this booking request?')">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <button class="btn danger" type="submit">Cancel request</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+  <div>
+    <div class="card-pad">
+      <h3>Provider contact</h3>
+      <p><b>{{ r.business_name }}</b><br><span class="muted">{{ r.location }}</span></p>
+      <p>📞 {{ r.phone }}</p>
+    </div>
+    <h3 style="margin-top:22px">Status timeline</h3>
+    <ul class="timeline">
+      {% set stages = [('pending','Request sent'),('accepted','Accepted by provider'),('completed','Experience completed')] %}
+      {% set order = {'pending':0,'accepted':1,'completed':2,'declined':-1,'cancelled':-1} %}
+      {% for key, label in stages %}
+      <li class="tl-item {% if order[r.status] is defined and order[r.status] >= loop.index0 %}done{% endif %} {% if (r.status=='pending' and key=='pending') or (r.status==key) %}now{% endif %}">
+        <span class="tl-dot"></span><b>{{ label }}</b>
+        {% if r.status == key %}<span class="muted">current status</span>{% endif %}
+      </li>
+      {% endfor %}
+      {% if r.status in ('declined','cancelled') %}
+      <li class="tl-item now"><span class="tl-dot" style="background:var(--err)"></span><b>{{ r.status|capitalize }}</b><span class="muted">this booking is closed</span></li>
+      {% endif %}
+    </ul>
+  </div>
+</div>
+<p><a href="{{ url_for('my_requests') if me.role=='tourist' else (url_for('provider_dashboard') if me.role=='provider' else url_for('admin_bookings')) }}">← Back to bookings</a></p>
+
+<div class="detail" style="margin-top:22px">
+  <h3>Messages about this booking</h3>
+  {% for m in msgs %}
+  <div class="review"><b>{{ m.sender }}</b> <span class="muted">· {{ m.sender_role }} · {{ m.created_at }}</span><p>{{ m.body }}</p></div>
+  {% else %}<p class="muted">No messages yet — sort out the details here.</p>{% endfor %}
+  {% if can_message %}
+  <form method="post" action="{{ url_for('booking_message', rid=r.id) }}" class="form card-pad">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <label>Message<textarea name="body" rows="3" maxlength="500" required placeholder="Write to {{ 'the provider' if me.role == 'tourist' else 'the tourist' }}…"></textarea></label>
+    <button class="btn" type="submit">Send message</button>
+  </form>
+  {% elif me.role == 'admin' %}
+  <p class="muted">Admins can read this thread but cannot post.</p>
+  {% endif %}
+</div>
+</div>
+{% endblock %}
