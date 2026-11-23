@@ -1542,6 +1542,9 @@ migrate_passwords()
 # middleware restores the original path. It lives here, on the app object
 # itself, so it applies no matter how the app is served (Vercel, gunicorn,
 # or the local dev server) — wrapping it only in api/index.py was bypassed.
+# The original path reaches us in one of two ways: Vercel's edge sets an
+# X-Forwarded-Uri header, and vercel.json also passes it as a __path query
+# parameter on the rewrite (see vercel.json).
 from urllib.parse import urlparse as _urlparse
 
 
@@ -1555,6 +1558,18 @@ class _RestoreOriginalPath:
             or environ.get("HTTP_X_VERCEL_REWRITE")
             or environ.get("HTTP_X_ORIGINAL_URL")
         )
+        if not original:
+            # Fall back to the __path query parameter set by vercel.json.
+            qs = environ.get("QUERY_STRING", "")
+            parts = qs.split("&") if qs else []
+            kept = []
+            for part in parts:
+                if part.startswith("__path="):
+                    original = part[len("__path="):]
+                else:
+                    kept.append(part)
+            # Drop __path so Flask never sees it as a real query parameter.
+            environ["QUERY_STRING"] = "&".join(kept)
         if original:
             path = _urlparse(original).path or "/"
             environ["PATH_INFO"] = path
