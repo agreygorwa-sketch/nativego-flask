@@ -1536,6 +1536,38 @@ def admin_message_delete(mid):
 init_db()
 migrate_passwords()
 
+# ------------------------------------------------------------------ vercel --
+# Vercel rewrites every request to /api/index, so Flask sees that path
+# instead of the real one and no route matches (every page 404s). This
+# middleware restores the original path. It lives here, on the app object
+# itself, so it applies no matter how the app is served (Vercel, gunicorn,
+# or the local dev server) — wrapping it only in api/index.py was bypassed.
+from urllib.parse import urlparse as _urlparse
+
+
+class _RestoreOriginalPath:
+    def __init__(self, wsgi_app):
+        self.wsgi_app = wsgi_app
+
+    def __call__(self, environ, start_response):
+        original = (
+            environ.get("HTTP_X_FORWARDED_URI")
+            or environ.get("HTTP_X_VERCEL_REWRITE")
+            or environ.get("HTTP_X_ORIGINAL_URL")
+        )
+        if original:
+            path = _urlparse(original).path or "/"
+            environ["PATH_INFO"] = path
+            environ["SCRIPT_NAME"] = ""
+        elif environ.get("PATH_INFO", "").startswith("/api/index"):
+            rest = environ["PATH_INFO"][len("/api/index"):]
+            environ["PATH_INFO"] = rest or "/"
+            environ["SCRIPT_NAME"] = ""
+        return self.wsgi_app(environ, start_response)
+
+
+app.wsgi_app = _RestoreOriginalPath(app.wsgi_app)
+
 if __name__ == "__main__":
     print("NativeGo v2 running → http://localhost:5050")
     port = int(os.environ.get("PORT", 5050))
