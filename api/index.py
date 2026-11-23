@@ -5,7 +5,7 @@ from urllib.parse import urlparse
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from app import app
+from app import app as flask_app
 
 
 class RestoreOriginalPath:
@@ -36,4 +36,6 @@ class RestoreOriginalPath:
         return self.wsgi_app(environ, start_response)
 
 
-app.wsgi_app = RestoreOriginalPath(app.wsgi_app)
+# Expose the wrapped WSGI app itself as `app`, so Vercel calls this
+# middleware directly instead of the bare Flask app.
+app = RestoreOriginalPath(flask_app.wsgi_app)
