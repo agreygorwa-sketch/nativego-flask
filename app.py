@@ -1545,6 +1545,7 @@ migrate_passwords()
 # The original path reaches us in one of two ways: Vercel's edge sets an
 # X-Forwarded-Uri header, and vercel.json also passes it as a __path query
 # parameter on the rewrite (see vercel.json).
+from urllib.parse import unquote as _unquote
 from urllib.parse import urlparse as _urlparse
 
 
@@ -1571,7 +1572,8 @@ class _RestoreOriginalPath:
             # Drop __path so Flask never sees it as a real query parameter.
             environ["QUERY_STRING"] = "&".join(kept)
         if original:
-            path = _urlparse(original).path or "/"
+            # The __path value arrives URL-encoded (%2Flogin), so decode it.
+            path = _urlparse(_unquote(original)).path or "/"
             environ["PATH_INFO"] = path
             environ["SCRIPT_NAME"] = ""
         elif environ.get("PATH_INFO", "").startswith("/api/index"):
