@@ -55,10 +55,14 @@ app.config.update(
 )
 
 BASE = os.path.dirname(os.path.abspath(__file__))
-DB = os.path.join(BASE, "nativego.db")
+# On Vercel the app directory is read-only, so the database and uploads move
+# to /tmp via NATIVEGO_DB / NATIVEGO_UPLOADS. Locally the defaults below keep
+# the files next to app.py, exactly as before.
+DB = os.environ.get("NATIVEGO_DB", os.path.join(BASE, "nativego.db"))
 
 # Provider verification documents (FR-11) live on disk, never in the DB.
-UPLOAD_DIR = os.path.join(BASE, "uploads", "verifications")
+UPLOAD_DIR = os.environ.get("NATIVEGO_UPLOADS",
+                            os.path.join(BASE, "uploads", "verifications"))
 ALLOWED_DOC_EXTS = {"pdf", "jpg", "jpeg", "png"}
 DOC_TYPES = ["National ID", "Passport", "Certificate", "Licence"]
 os.makedirs(UPLOAD_DIR, exist_ok=True)
