@@ -220,6 +220,13 @@ tbody tr:hover{background:#f6f3e9}
 tr.inactive{opacity:.55}
 table select{padding:6px 8px;border-radius:7px;border:1px solid var(--line);font-size:.9em}
 
+/* guide tables (from the project guide): plain tables whose first row is
+   the header; cells line up at the top so long text stays readable */
+.guide-table{margin:14px 0;min-width:0}
+.guide-table th,.guide-table td{vertical-align:top;white-space:normal}
+.guide-table th{white-space:nowrap}
+code{background:#f0e9d8;padding:2px 7px;border-radius:4px;font-size:.92em}
+
 /* tabs */
 .tabs{display:flex;gap:6px;margin:14px 0;flex-wrap:wrap}
 .tabs a{padding:7px 16px;border-radius:999px;background:#fff;color:#5c564a;text-decoration:none;font-size:.88em;border:1px solid var(--line);transition:all .2s}

@@ -1,0 +1,57 @@
+{% extends "base.html" %}{% block t %}Guide — Requirements{% endblock %}{% block c %}
+<div class="wrap">
+  <div class="page-head">
+    <h1>NativeGo — All 19 Requirements</h1>
+    <p>Every thing the system must do. Each row shows what you give it, what the system does, and what you see after. The wording is the document's own: Table 4.1, Functional requirements of the NativeGo web platform.</p>
+  </div>
+
+  <h2>Tourist — FR-01 to FR-08</h2>
+  <div class="table-wrap"><table class="guide-table">
+    <tr><th>ID</th><th>Requirement</th><th>Input → Process → Output</th></tr>
+    <tr><td>FR-01</td><td>Tourist: register an account</td><td>Name, email, password → validate input, hash password, create account → account created, session started</td></tr>
+    <tr><td>FR-02</td><td>Tourist: log in and log out</td><td>Email, password → verify hash, open session; clear session on logout → access to tourist pages / session ended</td></tr>
+    <tr><td>FR-03</td><td>Tourist: search verified providers by location and service</td><td>Location, service type, availability filter → query verified providers, rank by proximity → provider list with ratings</td></tr>
+    <tr><td>FR-04</td><td>Tourist: view provider profile</td><td>Provider selection → fetch profile, services, reviews → full profile page</td></tr>
+    <tr><td>FR-05</td><td>Tourist: send a service request</td><td>Service type, description, meeting point, time → create pending request, notify provider → request confirmation with status tracking</td></tr>
+    <tr><td>FR-06</td><td>Tourist: exchange messages on a request</td><td>Message text → store linked to the request → message appears in the thread</td></tr>
+    <tr><td>FR-07</td><td>Tourist: submit a review</td><td>Rating, comment → check service completed, store, update aggregates → review published, provider rating updated</td></tr>
+    <tr><td>FR-08</td><td>Tourist: report a misbehaving account</td><td>Report reason and details → store for administrator review → confirmation, case queued</td></tr>
+  </table></div>
+
+  <h2>Local Provider — FR-09 to FR-14</h2>
+  <div class="table-wrap"><table class="guide-table">
+    <tr><th>ID</th><th>Requirement</th><th>Input → Process → Output</th></tr>
+    <tr><td>FR-09</td><td>Provider: register a provider account</td><td>Name, email, password, services offered → validate, create account and profile → account created, profile hidden pending verification</td></tr>
+    <tr><td>FR-10</td><td>Provider: create and edit service profile</td><td>Bio, languages, services, rates, photos → store profile data → profile saved</td></tr>
+    <tr><td>FR-11</td><td>Provider: upload verification documents</td><td>Identity / certificate files → type-check, store, mark pending → documents queued for administrator review</td></tr>
+    <tr><td>FR-12</td><td>Provider: set availability</td><td>Available days and times → store availability → availability reflected in search results</td></tr>
+    <tr><td>FR-13</td><td>Provider: accept or decline requests</td><td>Accept / decline decision → update request status, notify tourist → status change confirmed</td></tr>
+    <tr><td>FR-14</td><td>Provider: view request and booking history</td><td>None → query the provider's requests → chronological history list</td></tr>
+  </table></div>
+
+  <h2>Administrator — FR-15 to FR-19</h2>
+  <div class="table-wrap"><table class="guide-table">
+    <tr><th>ID</th><th>Requirement</th><th>Input → Process → Output</th></tr>
+    <tr><td>FR-15</td><td>Administrator: log in</td><td>Administrator credentials → verify role, open session → dashboard access</td></tr>
+    <tr><td>FR-16</td><td>Administrator: approve or reject verifications</td><td>Decision with reason → update provider status, notify provider → provider visible to tourists, or rejected with reason</td></tr>
+    <tr><td>FR-17</td><td>Administrator: manage accounts</td><td>Suspend / activate action → update account flag → account status changed</td></tr>
+    <tr><td>FR-18</td><td>Administrator: handle reported cases</td><td>Report review and moderation decision → apply warning or suspension → case closed; parties notified</td></tr>
+    <tr><td>FR-19</td><td>Administrator: view system statistics</td><td>None → aggregate accounts, requests, reviews → statistics dashboard</td></tr>
+  </table></div>
+
+  <h2>Non-functional requirements (Table 4.2)</h2>
+  <p>Functional requirements say what the system does. Non-functional requirements say how well it must do it, across all roles.</p>
+  <div class="table-wrap"><table class="guide-table">
+    <tr><th>ID</th><th>Requirement and target</th><th>Why it matters to this system</th></tr>
+    <tr><td>NFR-01</td><td>Performance: pages load in under 3 seconds on modest mobile connections</td><td>Tourists on mobile data abandon slow pages; speed decides adoption (Emam &amp; Abdelaal, 2021)</td></tr>
+    <tr><td>NFR-02</td><td>Security: passwords salted and hashed; parameterized queries; server-side role checks on every route</td><td>Three roles and user-supplied content make this the sharpest risk (OWASP Foundation, 2021)(Alghawazi et al., 2022)</td></tr>
+    <tr><td>NFR-03</td><td>Usability: responsive interface, usable on phones, tablets and desktops with no training</td><td>Ease of use drives booking intention (Emam &amp; Abdelaal, 2021)(Li et al., 2022)</td></tr>
+    <tr><td>NFR-04</td><td>Privacy: location collected only where a feature needs it; never exposed beyond the parties to a request</td><td>Location data is sensitive and shapes continued use (Rodríguez-Priego et al., 2022)(Choi et al., 2023)</td></tr>
+    <tr><td>NFR-05</td><td>Reliability: consistent behaviour under repeated and concurrent use; no data loss on failure</td><td>A platform that loses requests loses trust</td></tr>
+    <tr><td>NFR-06</td><td>Compatibility: runs in any modern browser; no download or installation</td><td>Removes the biggest adoption barrier for short-stay tourists (Jagatha et al., 2023)</td></tr>
+    <tr><td>NFR-07</td><td>Maintainability: modular code (Flask blueprints per module); normalised schema</td><td>One module change without disturbing the rest (Bednarz &amp; Miłosz, 2025)(Hardini et al., 2025)</td></tr>
+  </table></div>
+
+  <p class="muted">Source: Table 4.1, Functional requirements, and Table 4.2, Non-functional requirements, in the project document (Chapters 1–4).</p>
+</div>
+{% endblock %}

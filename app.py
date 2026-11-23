@@ -506,6 +506,22 @@ def terms():
 def faq():
     return render_template("faq.html")
 
+@app.route("/guide")
+def guide():
+    return render_template("guide_index.html")
+
+@app.route("/guide/requirements")
+def guide_requirements():
+    return render_template("guide_requirements.html")
+
+@app.route("/guide/database")
+def guide_database():
+    return render_template("guide_database.html")
+
+@app.route("/guide/how-it-works")
+def guide_how_it_works():
+    return render_template("guide_how_it_works.html")
+
 DESTINATIONS = [
     ("Maasai Mara", "🦁", "Maasai Mara",
      "Endless savannah, the Great Migration and the Big Five. Kenya's most iconic safari destination, best with a seasoned local guide."),
