@@ -66,8 +66,10 @@
     <h2 class="section-title reveal">Top-rated providers</h2>
     <p class="section-sub reveal">Loved by travellers, verified by us.</p>
     <div class="grid">
+      {% set imgs = {'Mara Savannah Safaris': 'mara.jpg', 'Nairobi by Foot': 'nairobi.jpg', 'Lamu Dhow Adventures': 'lamu.jpg', 'Mt Kenya Treks': 'mt-kenya.jpg', 'Maasai Culture Experience': 'maasai.jpg', 'Amboseli Photo Walks': 'amboseli.jpg'} %}
       {% for p in featured %}
       <div class="card reveal">
+        {% if p.business_name in imgs %}<img class="card-img" src="{{ url_for('static', filename='images/' + imgs[p.business_name]) }}" alt="{{ p.business_name }}">{% endif %}
         <div class="card-top"><span class="badge">✓ Verified</span><span class="cat">{{ p.category }}</span></div>
         <a class="card-link" href="{{ url_for('provider_detail', pid=p.id) }}"><h3>{{ p.business_name }}</h3></a>
         <p class="loc">📍 {{ p.location }}</p>
