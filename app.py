@@ -6,9 +6,11 @@ Demo logins: tourist@demo.co.ke / demo123 · david@demo.co.ke / demo123
              admin@nativego.co.ke / admin123
 """
 import hmac
+import json
 import os
 import re
 import secrets
+import urllib.request
 import sqlite3
 import time
 from datetime import datetime, timedelta
@@ -552,6 +554,37 @@ def destinations():
         cards.append({"name": name, "emoji": emoji, "q": q, "blurb": blurb, "n": n})
     return render_template("destinations.html", cards=cards)
 
+# --- contact email (Resend) -------------------------------------------------
+# Contact messages are saved to the DB and also emailed to the company so
+# nothing is missed. Set RESEND_API_KEY and CONTACT_EMAIL in the environment
+# (Vercel). Without a key the message is still saved; the email is skipped.
+CONTACT_EMAIL = os.environ.get("CONTACT_EMAIL", "agrey.gorwa@strathmore.edu")
+
+def send_contact_email(name, email, subject, message):
+    """Send a contact-form message to the company via Resend. Fail-soft:
+    returns True on success, False otherwise; never raises."""
+    key = os.environ.get("RESEND_API_KEY", "")
+    if not key:
+        return False
+    payload = {
+        "from": "NativeGo <onboarding@resend.dev>",
+        "to": [CONTACT_EMAIL],
+        "reply_to": email,
+        "subject": f"NativeGo contact \u2014 {subject}",
+        "text": f"Name: {name}\nEmail: {email}\nSubject: {subject}\n\n{message}",
+    }
+    req = urllib.request.Request(
+        "https://api.resend.com/emails",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={"Authorization": f"Bearer {key}",
+                 "Content-Type": "application/json"},
+        method="POST")
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            return 200 <= resp.status < 300
+    except Exception:
+        return False
+
 CONTACT_SUBJECTS = ["General", "Booking help", "Provider support", "Safety concern"]
 
 @app.route("/contact", methods=["GET", "POST"])
@@ -585,6 +618,7 @@ def contact():
         me = current_user()
         log_activity(me["name"] if me else name, "contact_message",
                      f"{subject} from {email}")
+        send_contact_email(name, email, subject, message)
         flash("Message sent! We'll get back to you within 24 hours.", "ok")
         return redirect(url_for("contact"))
     return render_template("contact.html", subjects=CONTACT_SUBJECTS, form={})
