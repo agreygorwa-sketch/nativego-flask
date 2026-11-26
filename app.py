@@ -76,7 +76,11 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 # placeholders are translated to "%s" on Postgres, and rows support both
 # row["col"] and row[0], like sqlite3.Row.
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
-USE_PG = bool(DATABASE_URL)
+# Backend by URL scheme: postgres:// or postgresql:// -> Neon Postgres,
+# mysql:// -> XAMPP/MySQL, anything else (or unset) -> local SQLite file.
+USE_PG = DATABASE_URL.startswith(("postgres://", "postgresql://"))
+USE_MYSQL = DATABASE_URL.startswith("mysql://")
+USE_SQL = USE_PG or USE_MYSQL
 
 class Row(tuple):
     """A result row supporting both row['col'] and row[0]."""
@@ -92,13 +96,26 @@ class Row(tuple):
         return list(self._cols)
 
 class _Cursor:
-    """Wraps a DB-API cursor; translates ? to %s on Postgres and returns Row."""
-    def __init__(self, cur, pg):
+    """Wraps a DB-API cursor; translates ? to %s on Postgres/MySQL and returns Row."""
+    def __init__(self, cur, pg, mysql=False):
         self._cur = cur
         self._pg = pg
+        self._mysql = mysql
     def execute(self, sql, params=()):
-        if self._pg:
+        if self._pg or self._mysql:
             sql = sql.replace("?", "%s")
+        if self._mysql:
+            # MySQL has no NULLS FIRST/LAST syntax; for DESC it already puts
+            # NULLs last (NULL is the smallest value), so just drop the words.
+            sql = sql.replace(" NULLS LAST", "").replace(" NULLS FIRST", "")
+            # `read` is a reserved word in MySQL; quote it when used as a
+            # column (the messages table), outside string literals.
+            import re as _re
+            _parts = sql.split("'")
+            for _i in range(0, len(_parts), 2):
+                # only quote a bare `read`, not one already backticked
+                _parts[_i] = _re.sub(r"(?<!`)\bread\b(?!`)", "`read`", _parts[_i])
+            sql = "'".join(_parts)
         self._cur.execute(sql, params or ())
         return self
     def __iter__(self):
@@ -126,17 +143,27 @@ class _Cursor:
         return [Row(cols, r) for r in rows]
 
 class _Connection:
-    """Wraps a DB-API connection (sqlite3 or psycopg2) with one interface."""
-    def __init__(self, pg):
+    """Wraps a DB-API connection (sqlite3, psycopg2 or PyMySQL) with one interface."""
+    def __init__(self, pg, mysql=False):
         self._pg = pg
+        self._mysql = mysql
         if pg:
             import psycopg2
             self._conn = psycopg2.connect(DATABASE_URL)
+        elif mysql:
+            import pymysql
+            from urllib.parse import urlparse
+            u = urlparse(DATABASE_URL)
+            self._conn = pymysql.connect(
+                host=u.hostname or "127.0.0.1", port=u.port or 3306,
+                user=u.username or "root", password=u.password or "",
+                database=(u.path or "/nativego").lstrip("/"),
+                charset="utf8mb4", autocommit=False)
         else:
             self._conn = sqlite3.connect(DB)
     def execute(self, sql, params=()):
         cur = self._conn.cursor()
-        return _Cursor(cur, self._pg).execute(sql, params)
+        return _Cursor(cur, self._pg, self._mysql).execute(sql, params)
     def executescript(self, script):
         for stmt in script.split(";"):
             stmt = stmt.strip()
@@ -149,9 +176,9 @@ class _Connection:
         return self._conn.close()
 
 def connect_db():
-    """A fresh database connection: Postgres on Neon when DATABASE_URL is set,
-    otherwise the local SQLite file."""
-    return _Connection(USE_PG)
+    """A fresh database connection: Postgres on Neon or MySQL on XAMPP when
+    DATABASE_URL is set (scheme decides), otherwise the local SQLite file."""
+    return _Connection(USE_PG, USE_MYSQL)
 
 def get_db():
     if "db" not in g:
@@ -391,6 +418,21 @@ CREATE TABLE IF NOT EXISTS verification_docs(
 # Postgres version of the schema: the only change is SERIAL primary keys.
 SCHEMA_PG = SCHEMA.replace("id INTEGER PRIMARY KEY", "id SERIAL PRIMARY KEY")
 
+# MySQL version: AUTO_INCREMENT primary keys, and VARCHAR in place of TEXT
+# where a DEFAULT is needed (MySQL TEXT columns cannot have a default value).
+SCHEMA_MYSQL = SCHEMA.replace("id INTEGER PRIMARY KEY", "id INT AUTO_INCREMENT PRIMARY KEY")
+for _col, _typ in (("availability_days", "VARCHAR(255)"),
+                   ("availability_note", "VARCHAR(255)"),
+                   ("action", "VARCHAR(255)"),
+                   ("resolved_at", "VARCHAR(255)"),
+                   ("notes", "VARCHAR(1000)"),
+                   ("detail", "VARCHAR(1000)")):
+    SCHEMA_MYSQL = SCHEMA_MYSQL.replace(
+        f"{_col} TEXT NOT NULL DEFAULT ''", f"{_col} {_typ} NOT NULL DEFAULT ''")
+# `read` is a reserved word in MySQL/MariaDB; quote it in the DDL.
+SCHEMA_MYSQL = SCHEMA_MYSQL.replace(
+    "  read INTEGER NOT NULL DEFAULT 0);", "  `read` INTEGER NOT NULL DEFAULT 0);")
+
 SEED_USERS = [
     ("Wanjiku Tourist", "tourist@demo.co.ke", "demo123", "tourist"),
     ("David Mwangi", "david@demo.co.ke", "demo123", "provider"),
@@ -435,18 +477,19 @@ def _months_ago(n):
 
 def init_db():
     db = connect_db()
-    db.executescript(SCHEMA_PG if USE_PG else SCHEMA)
+    db.executescript(SCHEMA_PG if USE_PG else (SCHEMA_MYSQL if USE_MYSQL else SCHEMA))
     # Upgrade databases created before the FR-06/08/11/12/18 tables and the
     # provider availability columns existed (e.g. the live nativego.db).
-    if USE_PG:
+    if USE_PG or USE_MYSQL:
         cols = {r[0] for r in db.execute(
             "SELECT column_name FROM information_schema.columns "
             "WHERE table_name='providers'").fetchall()}
     else:
         cols = {r[1] for r in db.execute("PRAGMA table_info(providers)").fetchall()}
+    _txt = "VARCHAR(255) NOT NULL DEFAULT ''" if USE_MYSQL else "TEXT NOT NULL DEFAULT ''"
     for col, ddl in (("available", "INTEGER NOT NULL DEFAULT 1"),
-                     ("availability_days", "TEXT NOT NULL DEFAULT ''"),
-                     ("availability_note", "TEXT NOT NULL DEFAULT ''")):
+                     ("availability_days", _txt),
+                     ("availability_note", _txt)):
         if col not in cols:
             db.execute(f"ALTER TABLE providers ADD COLUMN {col} {ddl}")
     db.commit()
