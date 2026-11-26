@@ -70,11 +70,92 @@ DOC_TYPES = ["National ID", "Passport", "Certificate", "Licence"]
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 # ------------------------------------------------------------- db helpers ---
+# Database backend: Postgres on Neon when DATABASE_URL is set (Vercel), the
+# local SQLite file otherwise. The wrapper below gives both backends one
+# interface, so the 120 db.execute() calls in the app do not change: "?"
+# placeholders are translated to "%s" on Postgres, and rows support both
+# row["col"] and row[0], like sqlite3.Row.
+DATABASE_URL = os.environ.get("DATABASE_URL", "")
+USE_PG = bool(DATABASE_URL)
+
+class Row(tuple):
+    """A result row supporting both row['col'] and row[0]."""
+    def __new__(cls, cols, vals):
+        self = super().__new__(cls, vals)
+        self._cols = list(cols)
+        return self
+    def __getitem__(self, key):
+        if isinstance(key, str):
+            return super().__getitem__(self._cols.index(key))
+        return super().__getitem__(key)
+    def keys(self):
+        return list(self._cols)
+
+class _Cursor:
+    """Wraps a DB-API cursor; translates ? to %s on Postgres and returns Row."""
+    def __init__(self, cur, pg):
+        self._cur = cur
+        self._pg = pg
+    def execute(self, sql, params=()):
+        if self._pg:
+            sql = sql.replace("?", "%s")
+        self._cur.execute(sql, params or ())
+        return self
+    def __iter__(self):
+        # sqlite3 cursors are iterable; several call sites do
+        # "[r[0] for r in db.execute(...)]", so the wrapper must be too.
+        return iter(self.fetchall())
+    @property
+    def lastrowid(self):
+        # Postgres has no lastrowid; the one call site that needs the new id
+        # uses RETURNING id instead (see signup).
+        if self._pg:
+            return None
+        return self._cur.lastrowid
+    def fetchone(self):
+        row = self._cur.fetchone()
+        if row is None:
+            return None
+        cols = [d[0] for d in self._cur.description]
+        return Row(cols, row)
+    def fetchall(self):
+        rows = self._cur.fetchall()
+        if not rows:
+            return []
+        cols = [d[0] for d in self._cur.description]
+        return [Row(cols, r) for r in rows]
+
+class _Connection:
+    """Wraps a DB-API connection (sqlite3 or psycopg2) with one interface."""
+    def __init__(self, pg):
+        self._pg = pg
+        if pg:
+            import psycopg2
+            self._conn = psycopg2.connect(DATABASE_URL)
+        else:
+            self._conn = sqlite3.connect(DB)
+    def execute(self, sql, params=()):
+        cur = self._conn.cursor()
+        return _Cursor(cur, self._pg).execute(sql, params)
+    def executescript(self, script):
+        for stmt in script.split(";"):
+            stmt = stmt.strip()
+            if stmt:
+                self.execute(stmt)
+        return self
+    def commit(self):
+        return self._conn.commit()
+    def close(self):
+        return self._conn.close()
+
+def connect_db():
+    """A fresh database connection: Postgres on Neon when DATABASE_URL is set,
+    otherwise the local SQLite file."""
+    return _Connection(USE_PG)
+
 def get_db():
     if "db" not in g:
-        conn = sqlite3.connect(DB)
-        conn.row_factory = sqlite3.Row
-        g.db = conn
+        g.db = connect_db()
     return g.db
 
 @app.teardown_appcontext
@@ -307,6 +388,9 @@ CREATE TABLE IF NOT EXISTS verification_docs(
   filename TEXT NOT NULL, original_name TEXT NOT NULL, uploaded_at TEXT NOT NULL);
 """
 
+# Postgres version of the schema: the only change is SERIAL primary keys.
+SCHEMA_PG = SCHEMA.replace("id INTEGER PRIMARY KEY", "id SERIAL PRIMARY KEY")
+
 SEED_USERS = [
     ("Wanjiku Tourist", "tourist@demo.co.ke", "demo123", "tourist"),
     ("David Mwangi", "david@demo.co.ke", "demo123", "provider"),
@@ -350,19 +434,24 @@ def _months_ago(n):
     return d.strftime("%Y-%m-%d %H:%M")
 
 def init_db():
-    fresh = not os.path.exists(DB)
-    db = sqlite3.connect(DB)
-    db.executescript(SCHEMA)
+    db = connect_db()
+    db.executescript(SCHEMA_PG if USE_PG else SCHEMA)
     # Upgrade databases created before the FR-06/08/11/12/18 tables and the
     # provider availability columns existed (e.g. the live nativego.db).
-    cols = {r[1] for r in db.execute("PRAGMA table_info(providers)")}
+    if USE_PG:
+        cols = {r[0] for r in db.execute(
+            "SELECT column_name FROM information_schema.columns "
+            "WHERE table_name='providers'").fetchall()}
+    else:
+        cols = {r[1] for r in db.execute("PRAGMA table_info(providers)").fetchall()}
     for col, ddl in (("available", "INTEGER NOT NULL DEFAULT 1"),
                      ("availability_days", "TEXT NOT NULL DEFAULT ''"),
                      ("availability_note", "TEXT NOT NULL DEFAULT ''")):
         if col not in cols:
             db.execute(f"ALTER TABLE providers ADD COLUMN {col} {ddl}")
     db.commit()
-    if fresh:
+    # Seed only on a fresh database (the users table is empty).
+    if db.execute("SELECT COUNT(*) FROM users").fetchone()[0] == 0:
         now = datetime.now().strftime("%Y-%m-%d %H:%M")
         for name, email, pw, role in SEED_USERS:
             db.execute(
@@ -407,7 +496,7 @@ def init_db():
 
 def migrate_passwords():
     """Hash any plaintext passwords left in the DB (one-way upgrade)."""
-    db = sqlite3.connect(DB)
+    db = connect_db()
     changed = 0
     for uid, pw in db.execute("SELECT id, password FROM users").fetchall():
         pw = pw or ""
@@ -718,11 +807,18 @@ def signup():
             return render_template("signup.html", cats=cats,
                                    form=request.form), 400
         now = datetime.now().strftime("%Y-%m-%d %H:%M")
-        cur = db.execute(
-            "INSERT INTO users(name,email,password,role,active,created_at)"
-            " VALUES(?,?,?,?,1,?)",
-            (name, email, generate_password_hash(pw, method="pbkdf2"), role, now))
-        uid = cur.lastrowid
+        if USE_PG:
+            cur = db.execute(
+                "INSERT INTO users(name,email,password,role,active,created_at)"
+                " VALUES(?,?,?,?,1,?) RETURNING id",
+                (name, email, generate_password_hash(pw, method="pbkdf2"), role, now))
+            uid = cur.fetchone()[0]
+        else:
+            cur = db.execute(
+                "INSERT INTO users(name,email,password,role,active,created_at)"
+                " VALUES(?,?,?,?,1,?)",
+                (name, email, generate_password_hash(pw, method="pbkdf2"), role, now))
+            uid = cur.lastrowid
         if role == "provider":
             db.execute(
                 "INSERT INTO providers(user_id,business_name,category,location,"
