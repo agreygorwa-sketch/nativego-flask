@@ -6,6 +6,15 @@
   {% if prov.verified %}<span class="badge">✓ Verified</span>{% else %}<span class="pill pending">pending verification</span>{% endif %}</p></div>
   <a class="btn" href="{{ url_for('provider_edit') }}">Edit profile</a>
 </div>
+{% if not prov.verified %}
+<div class="card-pad" style="margin-bottom:16px">
+  <h3>Get verified — 3 steps</h3>
+  <p>1. Email: {% if email_verified %}✓ verified{% else %}✗ not verified — open the link we sent to your email.
+  <form method="post" action="{{ url_for('resend_verification') }}" style="display:inline"><input type="hidden" name="_csrf" value="{{ csrf_token() }}"><button class="btn sm" type="submit">Resend verification email</button></form>{% endif %}</p>
+  <p>2. Document: {% if docs %}✓ {{ docs|length }} uploaded{% else %}✗ not uploaded yet — upload one in the Verification documents section below{% endif %}</p>
+  <p>3. Admin approval: pending — the admin checks your email and documents, then approves your listing.</p>
+</div>
+{% endif %}
 <div class="stats">
   <div class="stat"><b>{{ pending }}</b><span>pending requests</span></div>
   <div class="stat"><b>{{ accepted }}</b><span>accepted</span></div>

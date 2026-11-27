@@ -3,8 +3,11 @@ seeded throwaway DB per test (see conftest.py).
 """
 from datetime import date, timedelta
 
+import sqlite3
+
 import pytest
 
+import app as app_module
 from conftest import (
     db_all,
     db_count,
@@ -153,11 +156,87 @@ def test_admin_activity_search_and_pagination(client):
 def test_admin_verify_approve_makes_provider_verified(client, db_path):
     login_as_admin(client)
     assert db_one(db_path, "SELECT verified FROM providers WHERE id=5")[0] == 0
+    _add_doc(db_path, 5)
     resp = post(client, "/admin/verify/5/approve", {},
                 csrf_path="/admin/verifications")
     assert resp.status_code == 302
     assert db_one(db_path, "SELECT verified FROM providers WHERE id=5")[0] == 1
     assert client.get("/provider/5").status_code == 200
+
+
+def _add_doc(db_path, pid):
+    """Insert one verification document row for a provider (test helper)."""
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        "INSERT INTO verification_docs(provider_id,doc_type,filename,original_name,uploaded_at)"
+        " VALUES(?,?,?,?,?)",
+        (pid, "National ID", "test_id.pdf", "test_id.pdf", "2026-11-27 10:00"))
+    conn.commit()
+    conn.close()
+
+
+def test_admin_verify_blocked_without_document(client, db_path):
+    login_as_admin(client)
+    resp = post(client, "/admin/verify/5/approve", {},
+                csrf_path="/admin/verifications")
+    assert resp.status_code == 302
+    assert db_one(db_path, "SELECT verified FROM providers WHERE id=5")[0] == 0
+    body = client.get("/admin/verifications").get_data(as_text=True)
+    assert "no verification document" in body
+
+
+PROVIDER_SIGNUP = {
+    "name": "Test Provider", "email": "verify.provider@example.com",
+    "password": "password123", "role": "provider",
+    "business": "Verify Tours", "category": "City Tour",
+    "location": "Nairobi", "description": "Test tours for verification.",
+    "phone": "+254700000000", "price": "5000",
+}
+
+
+def test_provider_signup_sets_email_token(client, db_path):
+    resp = post(client, "/signup", PROVIDER_SIGNUP, csrf_path="/signup")
+    assert resp.status_code == 302
+    row = db_one(db_path, "SELECT * FROM users WHERE email=?",
+                 ("verify.provider@example.com",))
+    assert row is not None and row["role"] == "provider"
+    assert row["email_verified"] == 0
+    assert row["email_token"]
+    prov = db_one(db_path, "SELECT * FROM providers WHERE user_id=?", (row["id"],))
+    assert prov is not None and prov["verified"] == 0
+
+
+def test_provider_email_verification_flow(client, db_path, monkeypatch):
+    """Email verification, then document, then admin approval — in that order."""
+    monkeypatch.setenv("SMTP_HOST", "smtp.example.com")
+    monkeypatch.setenv("SMTP_USER", "user@example.com")
+    monkeypatch.setenv("SMTP_PASS", "secret")
+    monkeypatch.setattr(app_module, "_send_email", lambda *a, **k: True)
+    resp = post(client, "/signup", PROVIDER_SIGNUP, csrf_path="/signup")
+    assert resp.status_code == 302
+    row = db_one(db_path, "SELECT * FROM users WHERE email=?",
+                 ("verify.provider@example.com",))
+    token = row["email_token"]
+    assert token
+    prov = db_one(db_path, "SELECT id FROM providers WHERE user_id=?", (row["id"],))
+    _add_doc(db_path, prov["id"])
+    # Admin cannot approve before the email is verified, even with a document.
+    login_as_admin(client)
+    post(client, f"/admin/verify/{prov['id']}/approve", {},
+         csrf_path="/admin/verifications")
+    assert db_one(db_path, "SELECT verified FROM providers WHERE id=?",
+                  (prov["id"],))[0] == 0
+    body = client.get("/admin/verifications").get_data(as_text=True)
+    assert "not verified their email" in body
+    # Verify the email via the link, then approval works.
+    resp = client.get(f"/verify-email/{token}")
+    assert resp.status_code == 302
+    assert db_one(db_path, "SELECT email_verified FROM users WHERE email=?",
+                  ("verify.provider@example.com",))[0] == 1
+    post(client, f"/admin/verify/{prov['id']}/approve", {},
+         csrf_path="/admin/verifications")
+    assert db_one(db_path, "SELECT verified FROM providers WHERE id=?",
+                  (prov["id"],))[0] == 1
 
 
 # ----------------------------------------------------------------- booking ---

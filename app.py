@@ -10,10 +10,12 @@ import json
 import os
 import re
 import secrets
+import smtplib
 import urllib.request
 import sqlite3
 import time
 from datetime import datetime, timedelta
+from email.message import EmailMessage
 from functools import wraps
 
 from flask import (Flask, abort, flash, g, redirect, render_template, request,
@@ -201,6 +203,56 @@ def clean(s, max_len=500):
 def valid_email(e):
     return bool(EMAIL_RE.match((e or "").strip())) and len(e) <= 120
 
+
+def _email_configured():
+    """True when SMTP credentials are set (env vars). Until then the email
+    step of provider verification is skipped and only the document check
+    applies, so signups never get stuck waiting for a mail that cannot go out."""
+    return bool(os.environ.get("SMTP_HOST") and os.environ.get("SMTP_USER")
+                and os.environ.get("SMTP_PASS"))
+
+
+def _send_email(to, subject, body):
+    """Send one plain-text email via SMTP from env vars. Never raises;
+    returns True on success, False when sending is unavailable or fails."""
+    if not _email_configured():
+        return False
+    try:
+        msg = EmailMessage()
+        msg["From"] = os.environ.get("SMTP_FROM") or os.environ["SMTP_USER"]
+        msg["To"] = to
+        msg["Subject"] = subject
+        msg.set_content(body)
+        host = os.environ["SMTP_HOST"]
+        port = int(os.environ.get("SMTP_PORT", "587"))
+        if port == 465:
+            server = smtplib.SMTP_SSL(host, port, timeout=15)
+        else:
+            server = smtplib.SMTP(host, port, timeout=15)
+            if os.environ.get("SMTP_TLS", "1") == "1":
+                server.starttls()
+        server.login(os.environ["SMTP_USER"], os.environ["SMTP_PASS"])
+        server.send_message(msg)
+        server.quit()
+        return True
+    except Exception as exc:  # noqa: BLE001 - email must never break signup
+        print(f"Email send failed: {exc}", flush=True)
+        return False
+
+
+def _send_verification_email(user):
+    """Send a provider their email-verification link. Returns True if sent."""
+    link = url_for("verify_email", token=user["email_token"], _external=True)
+    body = (
+        f"Karibu {user['name']}!\n\n"
+        "Please verify your email address to activate your NativeGo provider "
+        f"account by opening this link:\n{link}\n\n"
+        "After verifying, upload a verification document from your dashboard "
+        "so the admin can approve your listing.\n\n"
+        "— NativeGo"
+    )
+    return _send_email(user["email"], "Verify your NativeGo email", body)
+
 # --- CSRF: per-session token, validated on every POST via before_request ---
 @app.context_processor
 def inject_csrf():
@@ -376,7 +428,8 @@ SCHEMA = """
 CREATE TABLE IF NOT EXISTS users(
   id INTEGER PRIMARY KEY, name TEXT NOT NULL, email TEXT UNIQUE NOT NULL,
   password TEXT NOT NULL, role TEXT NOT NULL DEFAULT 'tourist',
-  active INTEGER NOT NULL DEFAULT 1, created_at TEXT NOT NULL);
+  active INTEGER NOT NULL DEFAULT 1, email_verified INTEGER NOT NULL DEFAULT 0,
+  email_token VARCHAR(255) NOT NULL DEFAULT '', created_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS providers(
   id INTEGER PRIMARY KEY, user_id INTEGER, business_name TEXT NOT NULL,
   category TEXT NOT NULL, location TEXT NOT NULL, description TEXT NOT NULL,
@@ -492,14 +545,30 @@ def init_db():
                      ("availability_note", _txt)):
         if col not in cols:
             db.execute(f"ALTER TABLE providers ADD COLUMN {col} {ddl}")
+    # Provider email verification (added later): same upgrade path for users.
+    if USE_PG or USE_MYSQL:
+        ucols = {r[0] for r in db.execute(
+            "SELECT column_name FROM information_schema.columns "
+            "WHERE table_name='users'").fetchall()}
+    else:
+        ucols = {r[1] for r in db.execute("PRAGMA table_info(users)").fetchall()}
+    _added_user_col = False
+    for col, ddl in (("email_verified", "INTEGER NOT NULL DEFAULT 0"),
+                     ("email_token", "VARCHAR(255) NOT NULL DEFAULT ''")):
+        if col not in ucols:
+            db.execute(f"ALTER TABLE users ADD COLUMN {col} {ddl}")
+            _added_user_col = True
+    if _added_user_col:
+        # Accounts created before verification existed are grandfathered in.
+        db.execute("UPDATE users SET email_verified=1")
     db.commit()
     # Seed only on a fresh database (the users table is empty).
     if db.execute("SELECT COUNT(*) FROM users").fetchone()[0] == 0:
         now = datetime.now().strftime("%Y-%m-%d %H:%M")
         for name, email, pw, role in SEED_USERS:
             db.execute(
-                "INSERT INTO users(name,email,password,role,active,created_at)"
-                " VALUES(?,?,?,?,1,?)",
+                "INSERT INTO users(name,email,password,role,active,email_verified,created_at)"
+                " VALUES(?,?,?,?,1,1,?)",
                 (name, email, generate_password_hash(pw, method="pbkdf2"), role, now))
         for p in SEED_PROVIDERS:
             db.execute(
@@ -782,6 +851,44 @@ def logout():
     flash("Logged out.", "ok")
     return redirect(url_for("index"))
 
+
+@app.route("/verify-email/<token>")
+def verify_email(token):
+    """Provider email verification: confirm the address, then the provider
+    uploads a verification document so the admin can approve the listing."""
+    db = get_db()
+    u = db.execute("SELECT * FROM users WHERE email_token=?", (token,)).fetchone()
+    if not token or not u:
+        flash("That verification link is invalid or has already been used.", "err")
+        return redirect(url_for("index"))
+    db.execute("UPDATE users SET email_verified=1, email_token='' WHERE id=?",
+               (u["id"],))
+    db.commit()
+    log_activity(u["name"], "email_verified", f"Verified email {u['email']}")
+    flash("Email verified! Now upload a verification document from your dashboard.", "ok")
+    if session.get("user_id") == u["id"] and u["role"] == "provider":
+        return redirect(url_for("provider_dashboard"))
+    return redirect(url_for("index"))
+
+
+@app.route("/resend-verification", methods=["POST"])
+@login_required
+def resend_verification():
+    """Send a fresh verification email to a provider who has not verified yet."""
+    me = current_user()
+    if me["role"] != "provider" or me["email_verified"]:
+        return redirect(url_for("index"))
+    token = secrets.token_urlsafe(32)
+    db = get_db()
+    db.execute("UPDATE users SET email_token=? WHERE id=?", (token, me["id"]))
+    db.commit()
+    me = current_user()
+    if _send_verification_email(me):
+        flash("Verification email sent — check your inbox.", "ok")
+    else:
+        flash("Email sending is not set up yet — ask the admin to confirm your email.", "err")
+    return redirect(url_for("provider_dashboard"))
+
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
     db = get_db()
@@ -853,6 +960,9 @@ def signup():
                 " VALUES(?,?,?,?,?,?,?,0)",
                 (uid, biz["business"], biz["category"] or cats[0], biz["location"],
                  biz["description"], biz["price"], biz["phone"]))
+            email_token = secrets.token_urlsafe(32)
+            db.execute("UPDATE users SET email_token=? WHERE id=?",
+                       (email_token, uid))
         db.commit()
         log_activity(name, "signup",
                      f"{role.capitalize()} account created ({email})")
@@ -861,7 +971,14 @@ def signup():
         session["csrf_token"] = secrets.token_hex(32)
         session.permanent = True
         if role == "provider":
-            flash("Account created! Your listing is pending admin verification.", "ok")
+            if _email_configured():
+                u = db.execute("SELECT * FROM users WHERE id=?", (uid,)).fetchone()
+                if _send_verification_email(u):
+                    flash("Account created! Check your email to verify your address, then upload a verification document from your dashboard.", "ok")
+                else:
+                    flash("Account created! We could not send the verification email — use Resend verification on your dashboard.", "err")
+            else:
+                flash("Account created! Upload a verification document from your dashboard so the admin can approve your listing.", "ok")
         else:
             flash(f"Karibu, {name}! Your account is ready.", "ok")
         return redirect(url_for("index"))
@@ -1181,7 +1298,7 @@ def provider_dashboard():
                            pending=pending, accepted=accepted, completed=completed,
                            earnings=earnings, reviews=reviews, avg=avg, n=n,
                            docs=docs, days=DAYS, days_set=days_set,
-                           doc_types=DOC_TYPES)
+                           doc_types=DOC_TYPES, email_verified=me["email_verified"])
 
 @app.route("/request/<int:rid>/<action>", methods=["POST"])
 @login_required
@@ -1427,7 +1544,7 @@ def admin_user_toggle(uid):
 def admin_verifications():
     db = get_db()
     pending = db.execute(
-        "SELECT p.*, u.name AS owner, u.email FROM providers p"
+        "SELECT p.*, u.name AS owner, u.email, u.email_verified FROM providers p"
         " LEFT JOIN users u ON u.id=p.user_id"
         " WHERE p.verified=0 ORDER BY p.id").fetchall()
     docs = db.execute(
@@ -1456,6 +1573,20 @@ def admin_verify(pid, decision):
     if not p:
         abort(404)
     if decision == "approve":
+        # Approval requires the full chain: verified email (when email is
+        # configured) and at least one uploaded verification document.
+        owner = (db.execute("SELECT * FROM users WHERE id=?", (p["user_id"],)).fetchone()
+                 if p["user_id"] else None)
+        docs_n = db.execute(
+            "SELECT COUNT(*) FROM verification_docs WHERE provider_id=?",
+            (pid,)).fetchone()[0]
+        email_ok = (not _email_configured()) or owner is None or owner["email_verified"]
+        if not email_ok:
+            flash("Cannot approve: this provider has not verified their email yet.", "err")
+            return redirect(url_for("admin_verifications"))
+        if docs_n == 0:
+            flash("Cannot approve: no verification document uploaded yet.", "err")
+            return redirect(url_for("admin_verifications"))
         db.execute("UPDATE providers SET verified=1 WHERE id=?", (pid,))
         db.commit()
         log_activity(me["name"], "verification",
