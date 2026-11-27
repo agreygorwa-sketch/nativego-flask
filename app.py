@@ -1298,7 +1298,8 @@ def provider_dashboard():
                            pending=pending, accepted=accepted, completed=completed,
                            earnings=earnings, reviews=reviews, avg=avg, n=n,
                            docs=docs, days=DAYS, days_set=days_set,
-                           doc_types=DOC_TYPES, email_verified=me["email_verified"])
+                           doc_types=DOC_TYPES, email_verified=me["email_verified"],
+                           email_configured=_email_configured())
 
 @app.route("/request/<int:rid>/<action>", methods=["POST"])
 @login_required
@@ -1549,7 +1550,8 @@ def admin_verifications():
         " WHERE p.verified=0 ORDER BY p.id").fetchall()
     docs = db.execute(
         "SELECT * FROM verification_docs ORDER BY uploaded_at DESC, id DESC").fetchall()
-    return render_template("admin_verifications.html", pending=pending, docs=docs)
+    return render_template("admin_verifications.html", pending=pending, docs=docs,
+                           email_configured=_email_configured())
 
 @app.route("/admin/verifications/doc/<int:doc_id>")
 @login_required

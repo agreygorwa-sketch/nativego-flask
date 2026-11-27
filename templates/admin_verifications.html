@@ -5,7 +5,7 @@
   <div class="card-top"><span class="cat">{{ p.category }}</span><span class="pill pending">pending</span></div>
   <h3>{{ p.business_name }}</h3>
   <p class="muted">📍 {{ p.location }} · 📞 {{ p.phone }}{% if p.owner %} · owner: {{ p.owner }} ({{ p.email }}){% endif %}</p>
-  {% if p.owner %}<p>Email: {% if p.email_verified %}✓ verified{% else %}✗ not verified{% endif %}</p>{% endif %}
+  {% if p.owner and email_configured %}<p>Email: {% if p.email_verified %}✓ verified{% else %}✗ not verified{% endif %}</p>{% endif %}
   <p><b>KES {{ "{:,}".format(p.price_per_day) }}</b> / day</p>
   <p>{{ p.description }}</p>
   {% set pdocs = docs|selectattr('provider_id', 'equalto', p.id)|list %}
